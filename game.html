@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Custom Card Game – Draft Cards at Start</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4fa; }
+    #main { max-width: 1100px; margin: 22px auto 0 auto; }
+    .hand-row { display: flex; align-items: center; margin: 12px 0 12px 0; background: rgba(255,255,255,0.94); border-radius: 3px; padding: 1px;}
+    .player-label { min-width: 110px; font-weight: 600; font-size: 1.14em; color: #486fb6; text-align: right; margin-right: 8px; }
+    .card { display: inline-block; width: 72px; height: 102px; border: 2.5px solid #486fb6; border-radius: 8px; margin: 5px; box-shadow: 0 2px 4px rgba(72, 111, 182, 0.11); background: #fff; cursor: pointer; }
+    .card.selected { background: #c7f4fb; border-color: #29b9dd; }
+    .card.disabled { opacity: 0.36; pointer-events: none; }
+    .card img { width: 100%; height: 100%; object-fit: cover; border-radius: 9px;}
+    #play-area { width:100%; background: #fff; border-radius: 12px; margin: 18px 0 0 0; box-shadow: 0 4px 14px rgba(72,111,182,0.10); padding: 20px; }
+    #trick-cards, #meld-cards, #discard-pile { display: flex; align-items: center; margin: 6px 0; }
+    #meld-area, #discard-pile-area { display: inline-block; font-size: 1.15em; margin-right: 27px;}
+    #discard-count { background: #b2bdd6; color: #f7fafc; border-radius: 7px; padding: 2px 11px; margin-left: 10px; font-size: 1.14em; border: 1.6px solid #607bdb;}
+    #turn-indicator { margin: 6px 0 11px 0; font-weight: bold; font-size: 1.20em; color: #243685; }
+    #solo-mode { color: #d90429; font-size: 1.27em; font-weight: bold; margin: 13px 0 13px 0; }
+    .picker-instruct { font-size: 1.09em; color: #486fb6; margin-right: 14px;}
+#draft-area { 
+  background: #f6f8ff; border: 2px solid #607bdb; border-radius: 11px; 
+  margin: 12px auto 16px auto; padding: 22px 12px 17px 12px; width: 80%; min-width: 430px; text-align:center;
+}
+.draft-cards-row { display: flex; flex-direction: row; gap: 40px; justify-content: center; margin-bottom: 5px;}
+.draft-card-col { display: flex; flex-direction: column; align-items: center; }
+.draft-main-card { width: 110px; height: 156px; margin-bottom: 7px; border-radius: 14px; box-shadow:0 2px 8px rgba(72,111,182,0.10); border: 2.5px solid #607bdb; background: #fff;}
+.draft-btns-row { display: flex; flex-direction: row; gap: 7px; justify-content: center;}
+.draft-pick-btn {
+  font-size: 1em; background: linear-gradient(90deg,#486fb6,#607bdb); color: #fff; border: none; 
+  border-radius: 6px; font-weight: 600; padding: 6px 11px; box-shadow:0 1px 6px rgba(72,111,182,0.08); cursor:pointer; margin-top: 1px;
+}
+.draft-pick-btn:disabled { background: #bccbe8; color: #dde1f3;}
+
+    #game-log-area { background: #f6f8ff; border: 2px solid #dddff2; border-radius: 10px; margin: 22px 0 0 0; min-height:70px; max-height:190px; overflow-y:auto; padding: 10px 22px;}
+    #game-log-area h3 { margin: 3px 0 10px 0; color:#2955a7; font-size:1.09em;}
+    .log-entry { margin-bottom: 5px;}
+    .log-card { display:inline-block; width: 44px; height: 63px; vertical-align:middle; margin-left: 6px;}
+    .log-card img { width:100%; height:100%; border-radius:6px; border:1px solid #ccc;}
+    .log-player { color:#243685; font-weight:600;}
+    .draft-btn { margin-left:18px; margin-right:11px; font-size: 1.09em; background: linear-gradient(90deg,#486fb6,#607bdb); color: #fff; border: none; border-radius: 7px; font-weight: 600; padding: 8px 21px; box-shadow:0 1.5px 6px rgba(72,111,182,0.07); cursor:pointer;}
+    .draft-btn:disabled { background: #bccbe8; color: #dde1f3;}
+  </style>
+</head>
+<body>
+  <div id="main">
+    <div id="hands"></div>
+    <div id="turn-indicator"></div>
+    <div id="play-area">
+      <div id="draft-area" style="display:none;"></div>
+      <div id="trick-cards"></div>
+      <div id="action-buttons"></div>
+      <div id="solo-mode"></div>
+      <div id="special-picker"></div>
+      <div style="margin:15px 0 4px 0;">
+        <span id="meld-area"><b>Winning Meld:</b> <span id="meld-cards"></span></span>
+        <span id="discard-pile-area"><b>Discard Pile:</b> <span id="discard-count">0</span></span>
+      </div>
+      <button onclick="startGame()">Start New Game</button>
+    </div>
+    <div id="game-log-area">
+      <h3>Game Log</h3>
+      <div id="game-log"></div>
+    </div>
+  </div>
+  <script>
+    const NUM_PLAYERS = 4, CARDS_PER_PLAYER = 13, CARD_VALUES = [1,2,3,4,5,6,7,8,9], COPIES_PER_CARD = 6;
+    let hands = [], deck = [], selectedCards = [], currentPlayer = 0, turnPhase = "LEAD", trickLead = 0,
+        trick = [], meld = [], discardCount = 0, soloMode = false, specialPickerState = null;
+    let gameLog = [];
+    let draftPhase = false;
+    let draftCards = [];
+    let draftStep = 0; // 0: non-start team, 1: lead team, 2: done
+
+    function logAction(msg, player, cards) {
+      let html = '';
+      if(player!==undefined) html += `<span class="log-player">Player ${player+1}</span>: `;
+      html += msg;
+      if(cards && cards.length > 0) {
+        for(let c of cards) {
+          html += `<span class="log-card"><img src="./images/card_${c.value}.jpg" alt="${c.value}"></span>`;
+        }
+      }
+      gameLog.push(html);
+      renderGameLog();
+    }
+    function renderGameLog() {
+      const area = document.getElementById('game-log');
+      area.innerHTML = gameLog.slice(-20).map(l=>`<div class="log-entry">${l}</div>`).join('');
+      area.scrollTop = area.scrollHeight;
+    }
+
+    function validateLeadPlay(playedCards, playerNum, hand, gameState) { return true; }
+    function validateFollowPlay(partnerCards, partnerNum, hand, leadCards, gameState) { return true; }
+    function validateMeld(trickCards, gameState) { return true; }
+
+    function buildDeck() {
+      let d = [];
+      for(let v of CARD_VALUES) for(let c=0; c<COPIES_PER_CARD; c++) d.push({value: v});
+      for(let i=d.length-1; i>0; i--) { let j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]];}
+      return d;
+    }
+
+    function dealHands() {
+      deck = buildDeck();
+      hands = [];
+      for(let p=0; p<NUM_PLAYERS; p++) {
+        hands.push([]);
+        for(let i=0; i<CARDS_PER_PLAYER; i++) hands[p].push(deck.pop());
+        hands[p].sort((a,b)=>a.value-b.value);
+      }
+    }
+
+    function displayHands() {
+      const handsCtn = document.getElementById("hands");
+      handsCtn.innerHTML = "";
+      for(let p=0; p<NUM_PLAYERS; p++) {
+        const row = document.createElement('div');
+        row.className = "hand-row";
+        const label = document.createElement('span');
+        label.className = "player-label";
+        label.textContent = (p === currentPlayer) ? "You:" : `Player ${p + 1}:`;
+        row.appendChild(label);
+        hands[p].forEach((card, idx) => {
+          const cardDiv = document.createElement('div');
+          cardDiv.className = "card";
+          const img = document.createElement('img');
+          img.src = `./images/card_${card.value}.jpg`;
+          img.alt = card.value;
+          cardDiv.appendChild(img);
+          if(p===currentPlayer && (turnPhase==="LEAD" || turnPhase==="PARTNER")){
+            cardDiv.onclick = () => toggleCard(idx);
+            if(selectedCards.includes(idx)) cardDiv.classList.add("selected");
+          } else {
+            cardDiv.classList.add("disabled");
+          }
+          row.appendChild(cardDiv);
+        });
+        handsCtn.appendChild(row);
+      }
+    }
+
+    function toggleCard(idx) {
+      if(turnPhase === "LEAD") {
+        if(selectedCards.includes(idx)) selectedCards = selectedCards.filter(i=>i!==idx);
+        else if(selectedCards.length < 3) selectedCards.push(idx);
+      }
+      if(turnPhase === "PARTNER") {
+        if(selectedCards.includes(idx)) selectedCards = selectedCards.filter(i=>i!==idx);
+        else if(selectedCards.length + trick.length < 4) selectedCards.push(idx);
+      }
+      displayHands(); updateActionButtons();
+    }
+
+    function displayTrick(pickableIndexes=null,pickHandler=null,label=null) {
+      const area = document.getElementById('trick-cards');
+      area.innerHTML = (label? `<span class="picker-instruct">${label}</span>` : "<b>Current Trick:</b>&nbsp;");
+      if(pickableIndexes && pickableIndexes.length>0) {
+        trick.forEach((card,i)=>{
+          if(!pickableIndexes.includes(i)) return;
+          const div = document.createElement('div');
+          div.className='card';
+          const img=document.createElement('img');
+          img.src=`./images/card_${card.value}.jpg`; img.alt=card.value;
+          div.appendChild(img);
+          div.onclick=()=>pickHandler(i);
+          area.appendChild(div);
+        });
+      } else {
+        selectedCards.forEach(idx=>{
+          const card=hands[currentPlayer][idx];
+          const div=document.createElement('div');
+          div.className='card selected';
+          const img=document.createElement('img');
+          img.src=`./images/card_${card.value}.jpg`;
+          img.alt=card.value; div.appendChild(img);
+          div.title='Click to remove';
+          div.onclick=()=>{selectedCards=selectedCards.filter(i=>i!==idx);displayHands();updateActionButtons();displayTrick();}
+          area.appendChild(div);
+        });
+        trick.forEach(card=>{
+          const div=document.createElement('div');
+          div.className='card';
+          const img=document.createElement('img');
+          img.src=`./images/card_${card.value}.jpg`;
+          img.alt=card.value;
+          div.appendChild(img);
+          area.appendChild(div);
+        });
+      }
+    }
+
+    function displayWinningMeld() {
+      const area = document.getElementById('meld-cards'); area.innerHTML = "";
+      meld.forEach(card => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        const img = document.createElement('img');
+        img.src = `./images/card_${card.value}.jpg`; img.alt = card.value;
+        div.appendChild(img); area.appendChild(div);
+      });
+    }
+    function displayDiscardCount() { document.getElementById('discard-count').textContent = discardCount;}
+
+    function updateActionButtons() {
+      const ab = document.getElementById('action-buttons'); ab.innerHTML = "";
+      document.getElementById('solo-mode').innerHTML = "";
+      document.getElementById('special-picker').innerHTML = "";
+      if(draftPhase) return;
+      if(turnPhase==="LEAD" && meld.length>0){
+        const passBtn = document.createElement('button');
+        passBtn.textContent = "Pass";
+        passBtn.onclick = leadPass;
+        ab.appendChild(passBtn);
+      }
+      if(turnPhase==="LEAD"){
+        const btn = document.createElement('button');
+        btn.textContent = "Submit Trick (Lead)";
+        btn.disabled = selectedCards.length < 1;
+        btn.onclick = submitLead;
+        ab.appendChild(btn);
+      }
+      if(turnPhase==="PARTNER"){
+        const passBtn = document.createElement('button');
+        passBtn.textContent = "Pass"; passBtn.onclick = partnerPass; ab.appendChild(passBtn);
+        const submitBtn = document.createElement('button');
+        submitBtn.textContent = "Submit as Partner";
+        submitBtn.disabled = (selectedCards.length===0 || (selectedCards.length+trick.length>4));
+        submitBtn.onclick = submitPartner; ab.appendChild(submitBtn);
+      }
+    }
+
+    function updateTurnIndicator(msgOverride) {
+      const t = document.getElementById('turn-indicator');
+      if(msgOverride) { t.textContent = msgOverride; return; }
+      if(draftPhase) {
+        t.textContent = "Drafting Extra Cards Before Start";
+        return;
+      }
+      let who = (turnPhase==="LEAD") ? `Lead: Player ${currentPlayer+1} (select 1 to 3 cards, Submit)` :
+        (turnPhase==="PARTNER" ? `Partner: Player ${currentPlayer+1} (add to 4, Submit/Pass)` :
+         turnPhase==="SELECT_LEAD_PICK" ? `Lead: Player ${trickLead+1} pick a card to take back` :
+         turnPhase==="SELECT_PARTNER_PICK" ? `Partner: Player ${currentPlayer+1} pick a card to take back` : "");
+      t.textContent = who ? `Your turn as: ${who}` : "";
+    }
+
+    // ---- Draft cards UI/logic ----
+function showDraftStep() {
+  draftPhase = true;
+  updateTurnIndicator();
+  updateActionButtons();
+  displayHands();
+
+  let area = document.getElementById("draft-area");
+  area.style.display = "block";
+  area.innerHTML = "";
+  // Teams: 0 & 2 (starting team), 1 & 3 (non-starting)
+  let teamNames = [
+    "Starting Team (Players 1 & 3)",
+    "Non-Starting Team (Players 2 & 4)"
+  ];
+
+  if (draftStep === 0) {
+    area.innerHTML = `<b>Non-Starting Team: Pick <span style="color:#486fb6;">which card</span> and which <span style="color:#486fb6;">team member</span> receives it:</b><br><br>`;
+    // Show big cards with assignment buttons below
+    let row = document.createElement('div');
+    row.className = "draft-cards-row";
+    draftCards.forEach((card, ci) => {
+      let col = document.createElement('div');
+      col.className = 'draft-card-col';
+      let img = document.createElement('img');
+      img.className = "draft-main-card";
+      img.src = `./images/card_${card.value}.jpg`;
+      img.alt = card.value;
+      col.appendChild(img);
+      let btns = document.createElement('div');
+      btns.className = "draft-btns-row";
+      [1,3].forEach(playerIdx => {
+        const btn = document.createElement('button');
+        btn.className = "draft-pick-btn";
+        btn.innerText = `Player ${playerIdx+1}`;
+        btn.onclick = ()=>draftAssignCard(ci,playerIdx);
+        btns.appendChild(btn);
+      });
+      col.appendChild(btns);
+      row.appendChild(col);
+    });
+    area.appendChild(row);
+  } else if (draftStep === 1) {
+    area.innerHTML = `<b>Starting Team: Choose which <span style="color:#486fb6;">player</span> receives the remaining card:</b><br><br>`;
+    let card = draftCards[0];
+    let row = document.createElement('div');
+    row.className = "draft-cards-row";
+    let col = document.createElement('div');
+    col.className = 'draft-card-col';
+    let img = document.createElement('img');
+    img.className = "draft-main-card";
+    img.src = `./images/card_${card.value}.jpg`;
+    img.alt = card.value;
+    col.appendChild(img);
+    let btns = document.createElement('div');
+    btns.className = "draft-btns-row";
+    [0,2].forEach(playerIdx => {
+      const btn = document.createElement('button');
+      btn.className = "draft-pick-btn";
+      btn.innerText = `Player ${playerIdx+1}`;
+      btn.onclick = ()=>draftAssignCard(0,playerIdx);
+      btns.appendChild(btn);
+    });
+    col.appendChild(btns);
+    row.appendChild(col);
+    area.appendChild(row);
+  } else {
+    area.style.display = "none";
+    draftPhase = false;
+    updateTurnIndicator();
+    updateActionButtons();
+    displayHands();
+  }
+}
+    function draftAssignCard(ci, playerIdx) {
+      const card = draftCards[ci];
+      hands[playerIdx].push(card);
+      hands[playerIdx].sort((a,b)=>a.value-b.value);
+      logAction("drafted extra card", playerIdx, [card]);
+      draftCards.splice(ci,1);
+      if(draftStep === 0) {
+        draftStep = 1;
+        showDraftStep(); // Remaining one goes to starting team
+      } else {
+        draftStep = 2;
+        showDraftStep();
+      }
+    }
+
+    function submitLead() {
+      if(meld.length > 0) {
+        logAction("winning meld discarded (overwritten by new meld)", undefined, meld);
+        discardCount += meld.length;
+        displayDiscardCount();
+      }
+      const toPlay = selectedCards.map(i => hands[currentPlayer][i]);
+      if(!validateLeadPlay(toPlay,currentPlayer,hands[currentPlayer],{})){alert("Lead play invalid!");return;}
+      logAction(`played`, currentPlayer, toPlay);
+      selectedCards.sort((a,b)=>b-a).forEach(i=>hands[currentPlayer].splice(i,1));
+      trick = [...toPlay]; selectedCards = [];
+      displayHands(); displayTrick(); updateActionButtons();
+      let partner=(currentPlayer%2===0)?(currentPlayer===0?2:0):(currentPlayer===1?3:1);
+      logAction(`passes to Partner (Player ${partner+1})`, currentPlayer);
+      currentPlayer=partner; turnPhase="PARTNER";
+      updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons();
+    }
+
+    function leadPass() {
+      logAction(`lead passed, winning meld discarded`, currentPlayer, meld);
+      discardCount += meld.length;
+      meld = [];
+      trick = [];
+      displayWinningMeld(); displayDiscardCount();
+      trickLead=(trickLead+1)%NUM_PLAYERS;
+      currentPlayer = trickLead;
+      turnPhase = "LEAD"; selectedCards = [];
+      updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons();
+    }
+
+    function partnerPass() {
+      logAction(`passed`, currentPlayer);
+
+      // SOLO MODE: No winning meld and exactly 1 card in trick
+      if (meld.length === 0 && trick.length === 1) {
+        document.getElementById('solo-mode').innerHTML = "SOLO MODE";
+        logAction("SOLO MODE triggered. (Placeholder for solo rules.)", currentPlayer, trick);
+        return;
+      }
+
+      // Special pick sequence: starts if there's no meld and >1 card, or if there is a meld
+      if ((meld.length === 0 && trick.length > 1) || (meld.length > 0)) {
+        specialPickerState = {
+          availableIdxs: trick.map((_,i)=>i),
+        };
+        turnPhase = "SELECT_LEAD_PICK";
+        updateForSpecialPicker();
+        return;
+      }
+
+      // Default
+      processEndOfTrick();
+    }
+
+    function processEndOfTrick() {
+      logAction("meld/played cards become winning meld", undefined, trick);
+      discardCount += meld.length; displayDiscardCount(); meld = [...trick]; trick = [];
+      trickLead=(trickLead+1)%NUM_PLAYERS; currentPlayer=trickLead; turnPhase="LEAD"; selectedCards=[];
+      updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons(); displayWinningMeld();
+    }
+
+    function processSpecialEndOfTrick() {
+      logAction("special return resolved: winning meld discarded", undefined, meld);
+      discardCount += meld.length; meld = [];
+      trick = [];
+      displayWinningMeld(); displayDiscardCount();
+      trickLead=(trickLead+1)%NUM_PLAYERS; currentPlayer=trickLead; turnPhase="LEAD"; selectedCards=[];
+      updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons(); displayWinningMeld();
+    }
+
+    // New special picker logic: alternate, finish if one card at any pick
+    function updateForSpecialPicker() {
+      if (turnPhase === "SELECT_LEAD_PICK") {
+        updateTurnIndicator();
+        displayTrick(
+          specialPickerState.availableIdxs,
+          function(idx) {
+            const card = trick[idx];
+            hands[trickLead].push(card);
+            hands[trickLead].sort((a, b) => a.value - b.value);
+            logAction(`(lead) took back`, trickLead, [card]);
+            specialPickerState.availableIdxs = specialPickerState.availableIdxs.filter(i => i !== idx);
+            if (specialPickerState.availableIdxs.length === 0) {
+              meld = [];
+              trick = [];
+              specialPickerState = null;
+              processSpecialEndOfTrick();
+              displayHands(); displayWinningMeld(); updateActionButtons();
+              return;
+            }
+            if (specialPickerState.availableIdxs.length === 1) {
+              const partner = (trickLead % 2 === 0) ? (trickLead === 0 ? 2 : 0) : (trickLead === 1 ? 3 : 1);
+              const theCard = trick[specialPickerState.availableIdxs[0]];
+              hands[partner].push(theCard);
+              hands[partner].sort((a, b) => a.value - b.value);
+              logAction(`(partner) took remaining`, partner, [theCard]);
+              meld = [];
+              trick = [];
+              specialPickerState = null;
+              processSpecialEndOfTrick();
+              displayHands(); displayWinningMeld(); updateActionButtons();
+              return;
+            }
+            turnPhase = "SELECT_PARTNER_PICK";
+            currentPlayer = (trickLead % 2 === 0) ? (trickLead === 0 ? 2 : 0) : (trickLead === 1 ? 3 : 1);
+            updateForSpecialPicker();
+          }
+        );
+      } else if (turnPhase === "SELECT_PARTNER_PICK") {
+        updateTurnIndicator();
+        displayTrick(
+          specialPickerState.availableIdxs,
+          function(idx) {
+            const card = trick[idx];
+            hands[currentPlayer].push(card);
+            hands[currentPlayer].sort((a, b) => a.value - b.value);
+            logAction(`(partner) took back`, currentPlayer, [card]);
+            specialPickerState.availableIdxs = specialPickerState.availableIdxs.filter(i => i !== idx);
+            if (specialPickerState.availableIdxs.length === 0) {
+              meld = [];
+              trick = [];
+              specialPickerState = null;
+              processSpecialEndOfTrick();
+              displayHands(); displayWinningMeld(); updateActionButtons();
+              return;
+            }
+            if (specialPickerState.availableIdxs.length === 1) {
+              const theCard = trick[specialPickerState.availableIdxs[0]];
+              hands[trickLead].push(theCard);
+              hands[trickLead].sort((a, b) => a.value - b.value);
+              logAction(`(lead) took remaining`, trickLead, [theCard]);
+              meld = [];
+              trick = [];
+              specialPickerState = null;
+              processSpecialEndOfTrick();
+              displayHands(); displayWinningMeld(); updateActionButtons();
+              return;
+            }
+            turnPhase = "SELECT_LEAD_PICK";
+            currentPlayer = trickLead;
+            updateForSpecialPicker();
+          }
+        );
+      }
+      displayHands(); displayWinningMeld(); updateActionButtons();
+    }
+
+    function submitPartner() {
+      const toPlay = selectedCards.map(i=>hands[currentPlayer][i]);
+      if(!validateFollowPlay(toPlay,currentPlayer,hands[currentPlayer],trick,{})){alert("Partner play invalid!");return;}
+      logAction("added", currentPlayer, toPlay);
+      selectedCards.sort((a,b)=>b-a).forEach(i=>hands[currentPlayer].splice(i,1));
+      trick = [...trick, ...toPlay]; selectedCards = [];
+      displayHands(); displayTrick(); updateActionButtons();
+      processEndOfTrick();
+    }
+
+    // ---- START GAME LOGIC ----
+    function startGame() {
+      gameLog = [];
+      dealHands();
+      draftPhase = true;
+      draftCards = [deck.pop(), deck.pop()];
+      draftStep = 0;
+
+      currentPlayer=0; trick=[]; trickLead=0; turnPhase="LEAD"; selectedCards=[]; meld=[]; discardCount=0; soloMode = false; specialPickerState = null;
+      updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons(); displayWinningMeld(); displayDiscardCount();
+      document.getElementById('solo-mode').innerHTML = "";
+      document.getElementById('special-picker').innerHTML = "";
+      showDraftStep();
+      renderGameLog();
+      logAction("Game started and cards dealt");
+      logAction("Draft phase: two cards to be assigned before game");
+    }
+    window.onload = startGame;
+  </script>
+</body>
+</html>
