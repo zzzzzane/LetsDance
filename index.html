@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Custom Card Game</title>
+  <title>Let's Dance!</title>
   <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4fa; }
     #main { max-width: 1100px; margin: 22px auto 0 auto; }
-    .hand-row { display: flex; align-items: center; margin: 12px 0 12px 0; background: rgba(255,255,255,0.94); border-radius: 9px; padding: 5px;}
+    .hand-row { display: flex; align-items: center; margin: 12px 0 12px 0; background: rgba(255,255,255,0.94); border-radius: 3px; padding: 1px;}
     .player-label { min-width: 110px; font-weight: 600; font-size: 1.14em; color: #486fb6; text-align: right; margin-right: 8px; }
-    .card { display: inline-block; width: 72px; height: 102px; border: 2.5px solid #486fb6; border-radius: 11px; margin: 7px; box-shadow: 0 2px 4px rgba(72, 111, 182, 0.11); background: #fff; cursor: pointer; }
+    .card { display: inline-block; width: 72px; height: 102px; border: 2.5px solid #486fb6; border-radius: 8px; margin: 5px; box-shadow: 0 2px 4px rgba(72, 111, 182, 0.11); background: #fff; cursor: pointer; }
     .card.selected { background: #c7f4fb; border-color: #29b9dd; }
     .card.disabled { opacity: 0.36; pointer-events: none; }
     .card img { width: 100%; height: 100%; object-fit: cover; border-radius: 9px;}
@@ -16,17 +16,15 @@
     #trick-cards, #meld-cards, #discard-pile { display: flex; align-items: center; margin: 6px 0; }
     #meld-area, #discard-pile-area { display: inline-block; font-size: 1.15em; margin-right: 27px;}
     #discard-count { background: #b2bdd6; color: #f7fafc; border-radius: 7px; padding: 2px 11px; margin-left: 10px; font-size: 1.14em; border: 1.6px solid #607bdb;}
-    #solo-mode { color: #d90429; font-size: 1.27em; font-weight: bold; margin: 13px 0 13px 0; }
+    #turn-indicator { margin: 6px 0 11px 0; font-weight: bold; font-size: 1.20em; color: #243685; }
+    #solo-mode { margin: 13px 0 13px 0; }
     .picker-instruct { font-size: 1.09em; color: #486fb6; margin-right: 14px;}
-    #draft-area { background: #f6f8ff; border: 2px solid #607bdb; border-radius: 11px; margin: 12px auto 16px auto; padding: 22px 12px 17px 12px; width: 80%; min-width: 430px; text-align:center;}
+    #draft-area { background: #f6f8ff; border: 2px solid #607bdb; border-radius: 11px; margin: 12px auto 16px auto; padding: 22px 12px 17px 12px; width: 80%; min-width: 430px; text-align:center; }
     .draft-cards-row { display: flex; flex-direction: row; gap: 40px; justify-content: center; margin-bottom: 5px;}
     .draft-card-col { display: flex; flex-direction: column; align-items: center; }
     .draft-main-card { width: 110px; height: 156px; margin-bottom: 7px; border-radius: 14px; box-shadow:0 2px 8px rgba(72,111,182,0.10); border: 2.5px solid #607bdb; background: #fff;}
     .draft-btns-row { display: flex; flex-direction: row; gap: 7px; justify-content: center;}
-    .draft-pick-btn {
-      font-size: 1em; background: linear-gradient(90deg,#486fb6,#607bdb); color: #fff; border: none; 
-      border-radius: 6px; font-weight: 600; padding: 6px 11px; box-shadow:0 1px 6px rgba(72,111,182,0.08); cursor:pointer; margin-top: 1px;
-    }
+    .draft-pick-btn { font-size: 1em; background: linear-gradient(90deg,#486fb6,#607bdb); color: #fff; border: none; border-radius: 6px; font-weight: 600; padding: 6px 11px; box-shadow:0 1px 6px rgba(72,111,182,0.08); cursor:pointer; margin-top: 1px;}
     .draft-pick-btn:disabled { background: #bccbe8; color: #dde1f3;}
     #game-log-area { background: #f6f8ff; border: 2px solid #dddff2; border-radius: 10px; margin: 22px 0 0 0; min-height:70px; max-height:190px; overflow-y:auto; padding: 10px 22px;}
     #game-log-area h3 { margin: 3px 0 10px 0; color:#2955a7; font-size:1.09em;}
@@ -34,7 +32,24 @@
     .log-card { display:inline-block; width: 44px; height: 63px; vertical-align:middle; margin-left: 6px;}
     .log-card img { width:100%; height:100%; border-radius:6px; border:1px solid #ccc;}
     .log-player { color:#243685; font-weight:600;}
-    #turn-indicator { margin: 16px 0 11px 0; font-weight: bold; font-size: 1.20em; color: #243685; text-align:center;}
+    .draft-btn { margin-left:18px; margin-right:11px; font-size: 1.09em; background: linear-gradient(90deg,#486fb6,#607bdb); color: #fff; border: none; border-radius: 7px; font-weight: 600; padding: 8px 21px; box-shadow:0 1.5px 6px rgba(72,111,182,0.07); cursor:pointer;}
+    .draft-btn:disabled { background: #bccbe8; color: #dde1f3;}
+    @keyframes solo-flash {
+      0%, 100% { color: #fff; background-color: #d90429; box-shadow: 0 0 18px #e84554, 0 0 22px #e84554; }
+      25% { color: #ffe66d; background-color: #d90429; }
+      50% { color: #fff; background-color: #243685; box-shadow: 0 0 10px #ffe66d, 0 0 15px #ffe66d;}
+      75% { color: #80ecca; background-color: #d90429;}
+    }
+    .solo-flash {
+      display: inline-block;
+      font-size: 2em;
+      font-weight: bold;
+      animation: solo-flash 0.7s infinite;
+      padding: 8px 24px;
+      border-radius: 12px;
+      margin: 13px 0 13px 0;
+      letter-spacing: 2px;
+    }
   </style>
 </head>
 <body>
@@ -48,7 +63,7 @@
       <div id="solo-mode"></div>
       <div id="special-picker"></div>
       <div style="margin:15px 0 4px 0;">
-        <span id="meld-area"><b>Winning Meld:</b> <span id="meld-cards"></span></span>
+        <span id="meld-area"><b>Winning Combo:</b> <span id="meld-cards"></span></span>
         <span id="discard-pile-area"><b>Discard Pile:</b> <span id="discard-count">0</span></span>
       </div>
       <button onclick="startGame()">Start New Game</button>
@@ -58,14 +73,15 @@
       <div id="game-log"></div>
     </div>
   </div>
+
   <script>
+    // ----- CONSTANTS AND GAME VARIABLES -----
     const NUM_PLAYERS = 4, CARDS_PER_PLAYER = 13, CARD_VALUES = [1,2,3,4,5,6,7,8,9], COPIES_PER_CARD = 6;
     let hands = [], deck = [], selectedCards = [], currentPlayer = 0, turnPhase = "LEAD", trickLead = 0,
-        trick = [], meld = [], discardCount = 0, soloMode = false, specialPickerState = null;
-    let gameLog = [];
-    let draftPhase = false, draftCards = [], draftStep = 0;
+        trick = [], meld = [], discardCount = 0, soloMode = false, soloPassCount = 0, lastSoloPlayer = null, soloInitiator = null,
+        gameLog = [], draftPhase = false, draftCards = [], draftStep = 0, specialPickerState = null;
 
-    /********* LOGGING & RENDER ***********/
+    // ------- LOGGING -------
     function logAction(msg, player, cards) {
       let html = '';
       if(player!==undefined) html += `<span class="log-player">Player ${player+1}</span>: `;
@@ -84,7 +100,162 @@
       area.scrollTop = area.scrollHeight;
     }
 
-    /********* DECK/DEAL ***********/
+    // ------- SECTION END ---------
+    // ----- MELD TYPE/VALIDATION LOGIC -----
+    function getMeldTypeInfo(cards) {
+      if (!cards || cards.length < 2) return null;
+      const freq = {};
+      for (const c of cards) freq[c.value] = (freq[c.value] || 0) + 1;
+      const sorted = cards.slice().sort((a,b)=>a.value-b.value);
+      // Bomb
+      if (sorted.length === 4 && sorted.every(c => c.value === sorted[0].value))
+        return { type: "Bomb", display: `Bomb ${sorted.map(c=>c.value).join('')}`, length: 4, value: sorted[0].value };
+      // Stairs
+      if (sorted.length === 4) {
+        const uniqueVals = Object.keys(freq).map(Number);
+        if (uniqueVals.length === 2 &&
+            Math.abs(uniqueVals[0] - uniqueVals[1]) === 1 &&
+            freq[uniqueVals[0]] === 2 && freq[uniqueVals[1]] === 2) {
+          const base = Math.min(uniqueVals[0], uniqueVals[1]);
+          return { type: "Stairs", display: `Stairs ${sorted.map(c=>c.value).join('')}`, length: 4, value: base };
+        }
+      }
+      // Trips
+      if (sorted.length === 3 && sorted.every(c=>c.value===sorted[0].value))
+        return { type: "Trips", display: `Trips ${sorted.map(c=>c.value).join('')}`, length: 3, value: sorted[0].value };
+      // Pair
+      if (sorted.length === 2 && sorted[0].value === sorted[1].value)
+        return { type: "Pair", display: `Pair ${sorted.map(c=>c.value).join('')}`, length:2, value: sorted[0].value };
+      // Run
+      if (sorted.length >= 2 && sorted.length <= 4) {
+        let ok = true;
+        for (let i = 1; i < sorted.length; i++)
+          if (sorted[i].value !== sorted[i-1].value + 1) ok=false;
+        if (ok)
+          return { type: `${sorted.length} Card Run`, display: `${sorted.length} Card Run ${sorted.map(c=>c.value).join('')}`, length: sorted.length, value: sorted[sorted.length-1].value };
+      }
+      return null;
+    }
+    function getPossibleLeadMeldTypes(leadCards) {
+      if (leadCards.length < 1 || leadCards.length > 3) return [];
+      let values = leadCards.map(c => c.value).sort((a, b) => a - b);
+      let possible = [];
+      if (leadCards.length < 4 && values.every(v => v === values[0])) possible.push("Bomb");
+      if (leadCards.length < 3 && values.every(v => v === values[0])) possible.push("Trips");
+      if (leadCards.length === 1 || (leadCards.length === 2 && values[0] === values[1])) possible.push("Pair");
+      if (new Set(values).size === leadCards.length) {
+        for (let len = Math.max(2, values.length); len <= 4; len++) {
+          for (let start = values[0] - 3; start <= values[0]; start++) {
+            let run = [];
+            for (let i = 0; i < len; i++) run.push(start + i);
+            if (values.every(v => run.includes(v))) { possible.push(`Run (${len} cards)`);}
+          }
+        }
+      }
+      if (values.length === 1) {
+        if (values[0] > 1) possible.push("Stairs");
+        if (values[0] < 9) possible.push("Stairs");
+      }
+      if (values.length === 2 && values[0] === values[1]) possible.push("Stairs");
+      if (values.length === 2 && values[1] === values[0] + 1) possible.push("Stairs");
+      if (values.length === 3) {
+        if (values[0] === values[1] && values[2] === values[0] + 1) possible.push("Stairs");
+        if (values[1] === values[2] && values[0] === values[1] - 1) possible.push("Stairs");
+      }
+      return [...new Set(possible)];
+    }
+    function canBecomeBomb(leadCards) {
+      return leadCards.length >=1 && leadCards.length <=3 && leadCards.every(card=>card.value === leadCards[0].value);
+    }
+    function canBecomeSameTypeHigherMeld(leadCards, winningMeld) {
+      if (!winningMeld || !winningMeld.type) return true;
+      let values = leadCards.map(c => c.value).sort((a, b) => a - b);
+      let meldType = winningMeld.type;
+      let meldLen = winningMeld.length;
+      let minValue = winningMeld.value;
+      if (meldType === "Pair") {
+        if (values.length >= 2) return false;
+        for (let v = minValue+1; v <= 9; v++) {
+          let count = values.filter(x => x === v).length;
+          if (count + (2 - values.length) >= 2) return true;
+        }
+        return false;
+      }
+      if (meldType === "Trips") {
+        if (values.length >= 3) return false;
+        for (let v = minValue+1; v <= 9; v++) {
+          let count = values.filter(x => x === v).length;
+          if (count + (3 - values.length) >= 3) return true;
+        }
+        return false;
+      }
+      if (meldType.endsWith("Card Run")) {
+        if (values.length >= meldLen) return false;
+        for (let start = minValue - meldLen + 2; start <= 10 - meldLen; start++) {
+          let wanted = [];
+          for (let i = 0; i < meldLen; i++) wanted.push(start + i);
+          if (wanted[wanted.length-1] <= minValue) continue;
+          let valid = values.every(v => wanted.includes(v));
+          if (valid) return true;
+        }
+        return false;
+      }
+      if (meldType === "Stairs") {
+        if (values.length >= 4) return false;
+        for (let a = minValue + 1; a <= 8; a++) {
+          let wanted = [a, a, a+1, a+1];
+          let counts = wanted.reduce((map, v) => { map[v] = (map[v] || 0) + 1; return map; }, {});
+          let valid = true;
+          for (let v in counts) {
+            let selectedCount = values.filter(x => x === Number(v)).length;
+            if (selectedCount > counts[v]) valid = false;
+          }
+          if (valid) return true;
+        }
+        return false;
+      }
+      return false;
+    }
+    function canPartnerBeatMeld(combined, winningMeldInfo) {
+      const newMeld = getMeldTypeInfo(combined);
+      if (!winningMeldInfo && newMeld) return true;
+      if (!newMeld) return false;
+      if (newMeld.type === "Bomb") return true;
+      if (newMeld.type === winningMeldInfo.type &&
+          newMeld.length === winningMeldInfo.length &&
+          newMeld.value > winningMeldInfo.value)
+        return true;
+      return false;
+    }
+
+function partnerHasValidMeldThatBeats(partnerHand, trick, winningMeldInfo) {
+  // Only allow up to (4 - trick.length) cards to add, since meld max is 4
+  const maxAdd = 4 - trick.length;
+  for (let n = 1; n <= Math.min(partnerHand.length, maxAdd); n++) {
+    const combinations = getCombinations(partnerHand, n);
+    for (const combo of combinations) {
+      const candidate = trick.concat(combo);
+      const candidateMeld = getMeldTypeInfo(candidate);
+      if (candidateMeld && canPartnerBeatMeld(candidate, winningMeldInfo)) return true;
+    }
+  }
+  return false;
+}
+
+function getCombinations(arr, n) {
+  if (n === 0) return [[]];
+  if (arr.length < n) return [];
+  if (arr.length === n) return [arr];
+  let out = [];
+  for (let i=0; i<=arr.length-n; i++) {
+    let head = arr[i], tailCombos = getCombinations(arr.slice(i+1), n-1);
+    for (const tail of tailCombos)
+      out.push([head].concat(tail));
+  }
+  return out;
+}
+
+    // ----- DECK AND HANDS -----
     function buildDeck() {
       let d = [];
       for(let v of CARD_VALUES) for(let c=0; c<COPIES_PER_CARD; c++) d.push({value: v});
@@ -101,7 +272,7 @@
       }
     }
 
-    /********* UI DISPLAY ***********/
+    // ----- DISPLAY HANDS -----
     function displayHands() {
       const handsCtn = document.getElementById("hands");
       handsCtn.innerHTML = "";
@@ -119,7 +290,7 @@
           img.src = `./images/card_${card.value}.jpg`;
           img.alt = card.value;
           cardDiv.appendChild(img);
-          if(p===currentPlayer && (turnPhase==="LEAD" || turnPhase==="PARTNER")){
+          if(p===currentPlayer && ((turnPhase==="LEAD" || turnPhase==="PARTNER") || soloMode)){
             cardDiv.onclick = () => toggleCard(idx);
             if(selectedCards.includes(idx)) cardDiv.classList.add("selected");
           } else {
@@ -130,9 +301,114 @@
         handsCtn.appendChild(row);
       }
     }
+    function toggleCard(idx) {
+      if(soloMode){
+        selectedCards = [idx];
+      } else if(turnPhase === "LEAD") {
+        if(selectedCards.includes(idx)) selectedCards = selectedCards.filter(i=>i!==idx);
+        else if(selectedCards.length < 3) selectedCards.push(idx);
+      } else if(turnPhase === "PARTNER") {
+        if(selectedCards.includes(idx)) selectedCards = selectedCards.filter(i=>i!==idx);
+        else if(selectedCards.length + trick.length < 4) selectedCards.push(idx);
+      }
+      displayHands(); updateActionButtons();
+    }
 
+    // ----- DRAFT PHASE -----
+    function showDraftStep() {
+      draftPhase = true;
+      updateTurnIndicator();
+      updateActionButtons();
+      displayHands();
+      let area = document.getElementById("draft-area");
+      area.style.display = "block";
+      area.innerHTML = "";
+      let teamNames = [
+        "Starting Team (Players 1 & 3)",
+        "Non-Starting Team (Players 2 & 4)"
+      ];
+      if (draftStep === 0) {
+        area.innerHTML = `<b>Non-Starting Team: Pick <span style="color:#486fb6;">which card</span> and which <span style="color:#486fb6;">team member</span> receives it:</b><br><br>`;
+        let row = document.createElement('div');
+        row.className = "draft-cards-row";
+        draftCards.forEach((card, ci) => {
+          let col = document.createElement('div');
+          col.className = 'draft-card-col';
+          let img = document.createElement('img');
+          img.className = "draft-main-card";
+          img.src = `./images/card_${card.value}.jpg`;
+          img.alt = card.value;
+          col.appendChild(img);
+          let btns = document.createElement('div');
+          btns.className = "draft-btns-row";
+          [1,3].forEach(playerIdx => {
+            const btn = document.createElement('button');
+            btn.className = "draft-pick-btn";
+            btn.innerText = `Player ${playerIdx+1}`;
+            btn.onclick = ()=>draftAssignCard(ci,playerIdx);
+            btns.appendChild(btn);
+          });
+          col.appendChild(btns);
+          row.appendChild(col);
+        });
+        area.appendChild(row);
+      } else if (draftStep === 1) {
+        area.innerHTML = `<b>Starting Team: Choose which <span style="color:#486fb6;">player</span> receives the remaining card:</b><br><br>`;
+        let card = draftCards[0];
+        let row = document.createElement('div');
+        let col = document.createElement('div');
+        col.className = 'draft-card-col';
+        let img = document.createElement('img');
+        img.className = "draft-main-card";
+        img.src = `./images/card_${card.value}.jpg`;
+        img.alt = card.value;
+        col.appendChild(img);
+        let btns = document.createElement('div');
+        btns.className = "draft-btns-row";
+        [0,2].forEach(playerIdx => {
+          const btn = document.createElement('button');
+          btn.className = "draft-pick-btn";
+          btn.innerText = `Player ${playerIdx+1}`;
+          btn.onclick = ()=>draftAssignCard(0,playerIdx);
+          btns.appendChild(btn);
+        });
+        col.appendChild(btns);
+        row.appendChild(col);
+        area.appendChild(row);
+      } else {
+        area.style.display = "none";
+        draftPhase = false;
+        updateTurnIndicator();
+        updateActionButtons();
+        displayHands();
+      }
+    }
+    function draftAssignCard(ci, playerIdx) {
+      const card = draftCards[ci];
+      hands[playerIdx].push(card);
+      hands[playerIdx].sort((a,b)=>a.value-b.value);
+      logAction("drafted extra card", playerIdx, [card]);
+      draftCards.splice(ci,1);
+      if(draftStep === 0) {
+        draftStep = 1;
+        showDraftStep();
+      } else {
+        draftStep = 2;
+        showDraftStep();
+      }
+    }
+
+    // ------- SECTION END ---------
+    // ----- TRICK AND MELD DISPLAY -----
     function displayTrick(pickableIndexes=null,pickHandler=null,label=null) {
       const area = document.getElementById('trick-cards');
+      // SOLO MODE hides trick area
+      if (soloMode) {
+        area.style.display = "none";
+        area.innerHTML = "";
+        return;
+      }
+      area.style.display = "";
       area.innerHTML = (label? `<span class="picker-instruct">${label}</span>` : "<b>Current Trick:</b>&nbsp;");
       if(pickableIndexes && pickableIndexes.length>0) {
         trick.forEach((card,i)=>{
@@ -177,14 +453,77 @@
         img.src = `./images/card_${card.value}.jpg`; img.alt = card.value;
         div.appendChild(img); area.appendChild(div);
       });
+      let meldInfo = getMeldTypeInfo(meld);
+      let meldTypeText = meld.length > 0
+        ? soloMode ? `Solo Meld (Single Card)` : (meldInfo ? `Winning Combo (${meldInfo.display})` : "Winning Meld (Invalid)")
+        : "";
+      area.parentElement.querySelector("b").textContent = meldTypeText;
     }
     function displayDiscardCount() { document.getElementById('discard-count').textContent = discardCount;}
+    function updateTurnIndicator(msgOverride) {
+      const t = document.getElementById('turn-indicator');
+      if(msgOverride) { t.textContent = msgOverride; return; }
+      if(draftPhase) { t.textContent = "Drafting Extra Cards Before Start"; return; }
+      if(soloMode) { t.textContent = `Solo Mode (Play a single higher card or Pass): Player ${currentPlayer+1}`; return; }
+      let who = (turnPhase==="LEAD") ? `Lead: Player ${currentPlayer+1} (select 1 to 3 cards, Submit)` :
+        (turnPhase==="PARTNER" ? `Partner: Player ${currentPlayer+1} (add to 4, Submit/Pass)` :
+         turnPhase==="SELECT_LEAD_PICK" ? `Lead: Player ${trickLead+1} pick a card to take back` :
+         turnPhase==="SELECT_PARTNER_PICK" ? `Partner: Player ${currentPlayer+1} pick a card to take back` : "");
+      t.textContent = who ? `Your turn as: ${who}` : "";
+    }
 
+    // ----- ACTION BUTTONS -----
     function updateActionButtons() {
       const ab = document.getElementById('action-buttons'); ab.innerHTML = "";
-      document.getElementById('solo-mode').innerHTML = "";
+      document.getElementById('solo-mode').innerHTML = soloMode ? '<span class="solo-flash">SOLO MODE!</span>' : "";
       document.getElementById('special-picker').innerHTML = "";
-      if(draftPhase) return;
+      if (draftPhase) return;
+
+      // SOLO MODE BUTTON LOGIC (overlaid; all else unchanged)
+      if(soloMode) {
+        let soloCard = selectedCards.length === 1 ? hands[currentPlayer][selectedCards[0]] : null;
+        let validPlay = soloCard && (soloCard.value > meld[0].value);
+        const playBtn = document.createElement('button');
+        playBtn.textContent = "Play Higher Card";
+        playBtn.disabled = !validPlay;
+        playBtn.onclick = () => {
+          meld = [soloCard];
+          hands[currentPlayer].splice(selectedCards[0], 1);
+          selectedCards = [];
+          soloPassCount = 0;
+          lastSoloPlayer = currentPlayer;
+          logAction("played higher card in solo mode", currentPlayer, meld);
+          displayHands(); displayWinningMeld();
+          advanceSoloModeTurn();
+        };
+        ab.appendChild(playBtn);
+
+        const passBtn = document.createElement('button');
+        passBtn.textContent = "Pass";
+        passBtn.onclick = () => {
+          soloPassCount++;
+          logAction("passed in solo mode", currentPlayer);
+          advanceSoloModeTurn();
+        };
+        ab.appendChild(passBtn);
+
+        const hint = document.createElement('div');
+        hint.style.marginTop = '7px';
+        if(selectedCards.length === 1) {
+          hint.style.color = validPlay ? '#18823b' : '#d90429';
+          hint.textContent = validPlay
+            ? "Valid: Play single card higher than solo card!"
+            : "Invalid: Must play a single card strictly higher than solo card!";
+        } else {
+          hint.style.color = '#2955a7';
+          hint.textContent = "Select a single card to play or click Pass.";
+        }
+        ab.appendChild(hint);
+        displayTrick();
+        return;
+      }
+
+      // The partner/lead/submit button logic remains unchanged below
       if(turnPhase==="LEAD" && meld.length>0){
         const passBtn = document.createElement('button');
         passBtn.textContent = "Pass";
@@ -194,255 +533,186 @@
       if(turnPhase==="LEAD"){
         const btn = document.createElement('button');
         btn.textContent = "Submit Trick (Lead)";
-        btn.disabled = selectedCards.length < 1;
+        const toPlay = selectedCards.map(i => hands[currentPlayer][i]);
+        const winningMeldInfo = getMeldTypeInfo(meld);
+        let valid = false;
+        if (!winningMeldInfo) {
+          let possibleTypes = getPossibleLeadMeldTypes(toPlay);
+          valid = selectedCards.length >= 1 && possibleTypes.length > 0;
+        } else {
+          valid = selectedCards.length >= 1 && (canBecomeBomb(toPlay) || canBecomeSameTypeHigherMeld(toPlay, winningMeldInfo));
+        }
+        btn.disabled = !valid;
         btn.onclick = submitLead;
         ab.appendChild(btn);
+        const hint = document.createElement('div');
+        if (selectedCards.length > 0) {
+          if (!winningMeldInfo) {
+            let possibleTypes = getPossibleLeadMeldTypes(toPlay);
+            hint.style.color = possibleTypes.length ? '#18823b' : '#d90429';
+            hint.textContent = possibleTypes.length
+              ? "Possible combos: " + possibleTypes.join(', ')
+              : "No valid combo can be formed from this selection!";
+          } else {
+            if (btn.disabled) {
+              hint.style.color = '#d90429';
+              hint.textContent = "Selection cannot win against current combo.";
+            } else {
+              hint.style.color = '#18823b';
+              hint.textContent = canBecomeBomb(toPlay)
+                ? "Possible: Can become Bomb (beats any combo)"
+                : `Possible: Can become higher ${winningMeldInfo.type}`;
+            }
+          }
+          hint.style.marginTop = '7px';
+          ab.appendChild(hint);
+        }
       }
-      if(turnPhase==="PARTNER"){
-        const passBtn = document.createElement('button');
-        passBtn.textContent = "Pass";
-        passBtn.disabled = !partnerCanPass();
-        passBtn.onclick = partnerPass; ab.appendChild(passBtn);
+if(turnPhase==="PARTNER"){
+  // Check if partner CAN pass
+  const partnerHand = hands[currentPlayer].slice();
+  const canPass = !partnerHasValidMeldThatBeats(partnerHand, trick);
+  const passBtn = document.createElement('button');
+  passBtn.textContent = "Pass";
+  passBtn.onclick = partnerPass;
+  passBtn.disabled = !canPass;
+  ab.appendChild(passBtn);
+
         const submitBtn = document.createElement('button');
         submitBtn.textContent = "Submit as Partner";
-        submitBtn.disabled = (selectedCards.length===0 || !validateFollowPlay(selectedCards,currentPlayer,hands[currentPlayer],trick,{}));
-        submitBtn.onclick = submitPartner; ab.appendChild(submitBtn);
+        const partnerCards = selectedCards.map(i => hands[currentPlayer][i]);
+        const combined = trick.concat(partnerCards);
+        const meldInfo = getMeldTypeInfo(combined);
+        const winningMeldInfo = getMeldTypeInfo(meld);
+        let canPlay = false;
+        if (!winningMeldInfo) {
+          canPlay = meldInfo !== null;
+        } else if (meldInfo) {
+          if (meldInfo.type === "Bomb") canPlay = true;
+          else if (meldInfo.type === winningMeldInfo.type && meldInfo.length === winningMeldInfo.length && meldInfo.value > winningMeldInfo.value) canPlay = true;
+        }
+        submitBtn.disabled = selectedCards.length === 0 || !canPlay;
+        submitBtn.onclick = submitPartner;
+        ab.appendChild(submitBtn);
+        const hint = document.createElement('div');
+        if (selectedCards.length > 0) {
+          hint.style.color = canPlay ? '#18823b' : '#d90429';
+          hint.style.marginTop = '7px';
+          hint.textContent = meldInfo
+            ? canPlay
+              ? `Possible combo: ${meldInfo.display}`
+              : "Selection cannot win against current combo."
+            : "Selection cannot form a valid combo!";
+          ab.appendChild(hint);
+        }
+        if (!canPass) {
+    const errHint = document.createElement('div');
+    errHint.textContent = "You cannot pass (you have a valid play to add to the combo)";
+    errHint.style.color = "#d90429";
+    errHint.style.marginTop = '7px';
+    ab.appendChild(errHint);
+  }
       }
     }
 
-    function updateTurnIndicator(msgOverride) {
-      const t = document.getElementById('turn-indicator');
-      if(msgOverride) { t.textContent = msgOverride; return; }
-      let who = (turnPhase==="LEAD") ? `Your turn as: Lead (Player ${currentPlayer+1}) (select 1–3 cards, Submit)` :
-        (turnPhase==="PARTNER" ? `Your turn as: Partner (Player ${currentPlayer+1}) (complete the meld if possible—select 0–3 cards, Submit/Pass)` :
-         turnPhase==="SELECT_LEAD_PICK" ? `Lead: Player ${trickLead+1} pick a card to take back` :
-         turnPhase==="SELECT_PARTNER_PICK" ? `Partner: Player ${currentPlayer+1} pick a card to take back` : "");
-      t.textContent = who ? who : "";
-    }
-
-    /********* DRAFT LOGIC ***********/
-    function showDraftStep() {
-      draftPhase = true;
-      updateTurnIndicator();
-      updateActionButtons();
-      displayHands();
-      let area = document.getElementById("draft-area");
-      area.style.display = "block";
-      area.innerHTML = "";
-      if (draftStep === 0) {
-        let row = document.createElement('div');
-        row.className = "draft-cards-row";
-        draftCards.forEach((card, ci) => {
-          let col = document.createElement('div');
-          col.className = 'draft-card-col';
-          let img = document.createElement('img');
-          img.className = "draft-main-card";
-          img.src = `./images/card_${card.value}.jpg`;
-          img.alt = card.value;
-          col.appendChild(img);
-          let btns = document.createElement('div');
-          btns.className = "draft-btns-row";
-          [1,3].forEach(playerIdx => {
-            const btn = document.createElement('button');
-            btn.className = "draft-pick-btn";
-            btn.innerText = `Player ${playerIdx+1}`;
-            btn.onclick = ()=>draftAssignCard(ci,playerIdx);
-            btns.appendChild(btn);
-          });
-          col.appendChild(btns);
-          row.appendChild(col);
-        });
-        area.appendChild(row);
-      } else if (draftStep === 1) {
-        let card = draftCards[0];
-        let row = document.createElement('div');
-        row.className = "draft-cards-row";
-        let col = document.createElement('div');
-        col.className = 'draft-card-col';
-        let img = document.createElement('img');
-        img.className = "draft-main-card";
-        img.src = `./images/card_${card.value}.jpg`;
-        img.alt = card.value;
-        col.appendChild(img);
-        let btns = document.createElement('div');
-        btns.className = "draft-btns-row";
-        [0,2].forEach(playerIdx => {
-          const btn = document.createElement('button');
-          btn.className = "draft-pick-btn";
-          btn.innerText = `Player ${playerIdx+1}`;
-          btn.onclick = ()=>draftAssignCard(0,playerIdx);
-          btns.appendChild(btn);
-        });
-        col.appendChild(btns);
-        row.appendChild(col);
-        area.appendChild(row);
-      } else {
-        area.style.display = "none";
-        draftPhase = false;
+    // ------- SECTION END ---------
+    // ----- SPECIAL PICKER FOR RETURNS -----
+    function updateForSpecialPicker() {
+      if (turnPhase === "SELECT_LEAD_PICK") {
         updateTurnIndicator();
-        updateActionButtons();
-        displayHands();
-      }
-    }
-    function draftAssignCard(ci, playerIdx) {
-      const card = draftCards[ci];
-      hands[playerIdx].push(card);
-      hands[playerIdx].sort((a,b)=>a.value-b.value);
-      logAction("drafted extra card", playerIdx, [card]);
-      draftCards.splice(ci,1);
-      if(draftStep === 0) {
-        draftStep = 1;
-        showDraftStep();
-      } else {
-        draftStep = 2;
-        showDraftStep();
-      }
-    }
-
-    /********* MELD AND VALIDATION LOGIC ***********/
-    function getMeldTypeInfo(cards) {
-      if (!cards || cards.length < 2) return null;
-      cards = cards.slice().sort((a, b) => a.value - b.value);
-
-      // Bomb (4 of a kind)
-      if (cards.length === 4 && cards.every(c => c.value === cards[0].value))
-        return { type: "bomb", length: 4, value: cards[0].value };
-
-      // Stairs (two consecutive pairs)
-      if (cards.length === 4) {
-        let a = cards[0].value, b = cards[2].value;
-        if (
-          cards[0].value === cards[1].value &&
-          cards[2].value === cards[3].value &&
-          b === a + 1
-        )
-          return { type: "stairs", length: 4, value: a };
-      }
-      // Trips
-      if (cards.length === 3 && cards.every(c => c.value === cards[0].value))
-        return { type: "trips", length: 3, value: cards[0].value };
-      // Pair
-      if (cards.length === 2 && cards[0].value === cards[1].value)
-        return { type: "pair", length: 2, value: cards[0].value };
-      // Run (2–4 in sequence, unique)
-      if (cards.length >= 2 && cards.length <= 4) {
-        let allConsecutive = true, seen = new Set([cards[0].value]);
-        for (let i = 1; i < cards.length; ++i) {
-          if (cards[i].value !== cards[i-1].value + 1 || seen.has(cards[i].value)) {
-            allConsecutive = false; break;
+        displayTrick(
+          specialPickerState.availableIdxs,
+          function(idx) {
+            const card = trick[idx];
+            hands[trickLead].push(card);
+            hands[trickLead].sort((a, b) => a.value - b.value);
+            logAction(`(lead) took back`, trickLead, [card]);
+            specialPickerState.availableIdxs = specialPickerState.availableIdxs.filter(i => i !== idx);
+            if (specialPickerState.availableIdxs.length === 0) {
+              meld = [];
+              trick = [];
+              specialPickerState = null;
+              processSpecialEndOfTrick();
+              displayHands(); displayWinningMeld(); updateActionButtons();
+              return;
+            }
+            if (specialPickerState.availableIdxs.length === 1) {
+              const partner = (trickLead % 2 === 0) ? (trickLead === 0 ? 2 : 0) : (trickLead === 1 ? 3 : 1);
+              const theCard = trick[specialPickerState.availableIdxs[0]];
+              hands[partner].push(theCard);
+              hands[partner].sort((a, b) => a.value - b.value);
+              logAction(`(partner) took remaining`, partner, [theCard]);
+              meld = [];
+              trick = [];
+              specialPickerState = null;
+              processSpecialEndOfTrick();
+              displayHands(); displayWinningMeld(); updateActionButtons();
+              return;
+            }
+            turnPhase = "SELECT_PARTNER_PICK";
+            currentPlayer = (trickLead % 2 === 0) ? (trickLead === 0 ? 2 : 0) : (trickLead === 1 ? 3 : 1);
+            updateForSpecialPicker();
           }
-          seen.add(cards[i].value);
-        }
-        if (allConsecutive)
-          return { type: "run", length: cards.length, value: cards[cards.length-1].value };
-      }
-      return null;
-    }
-    function canBeatWinningMeld(candidate, currentMeld) {
-      let candType = getMeldTypeInfo(candidate);
-      let winType = getMeldTypeInfo(currentMeld);
-
-      if (!candType || !winType) return false;
-
-      // Bomb can always beat any non-bomb
-      if (candType.type === "bomb" && winType.type !== "bomb") return true;
-
-      // Bomb over bomb – ONLY higher value allowed
-      if (winType.type === "bomb") {
-        return candType.type === "bomb" && candType.value > winType.value;
-      }
-
-      // Otherwise must be same type and length, and strictly higher value
-      if (candType.type !== winType.type) return false;
-      if (candType.length !== winType.length) return false;
-
-      return candType.value > winType.value;
-    }
-
-    function canPartnerCompleteMeld(partnerHand, leadCards, currentWinningMeld) {
-      // Try all possible subsets of partner's hand (size 1-3) to build a valid meld with lead's cards
-      for (let size = 1; size <= Math.min(3, partnerHand.length); size++) {
-        let indices = Array.from({length: partnerHand.length}, (_, i) => i);
-        let combos = getAllCombinations(indices, size);
-        for (let combo of combos) {
-          let selected = combo.map(idx => partnerHand[idx]);
-          let trick = leadCards.concat(selected);
-          let candidate = getMeldTypeInfo(trick);
-          if (!candidate) continue;
-          if (!currentWinningMeld || canBeatWinningMeld(trick, currentWinningMeld)) {
-            return true;
+        );
+      } else if (turnPhase === "SELECT_PARTNER_PICK") {
+        updateTurnIndicator();
+        displayTrick(
+          specialPickerState.availableIdxs,
+          function(idx) {
+            const card = trick[idx];
+            hands[currentPlayer].push(card);
+            hands[currentPlayer].sort((a, b) => a.value - b.value);
+            logAction(`(partner) took back`, currentPlayer, [card]);
+            specialPickerState.availableIdxs = specialPickerState.availableIdxs.filter(i => i !== idx);
+            if (specialPickerState.availableIdxs.length === 0) {
+              meld = [];
+              trick = [];
+              specialPickerState = null;
+              processSpecialEndOfTrick();
+              displayHands(); displayWinningMeld(); updateActionButtons();
+              return;
+            }
+            if (specialPickerState.availableIdxs.length === 1) {
+              const theCard = trick[specialPickerState.availableIdxs[0]];
+              hands[trickLead].push(theCard);
+              hands[trickLead].sort((a, b) => a.value - b.value);
+              logAction(`(lead) took remaining`, trickLead, [theCard]);
+              meld = [];
+              trick = [];
+              specialPickerState = null;
+              processSpecialEndOfTrick();
+              displayHands(); displayWinningMeld(); updateActionButtons();
+              return;
+            }
+            turnPhase = "SELECT_LEAD_PICK";
+            currentPlayer = trickLead;
+            updateForSpecialPicker();
           }
-        }
+        );
       }
-      return false;
+      displayHands(); displayWinningMeld(); updateActionButtons();
     }
 
-    function getAllCombinations(arr, k) {
-      let results = [];
-      function combo(temp, start) {
-        if (temp.length === k) {
-          results.push([...temp]);
-          return;
-        }
-        for (let i = start; i < arr.length; i++) {
-          temp.push(arr[i]);
-          combo(temp, i + 1);
-          temp.pop();
-        }
-      }
-      combo([], 0);
-      return results;
+    // ----- TURN ADVANCERS -----
+    function processEndOfTrick() {
+      logAction("combo/played cards become winning combo", undefined, trick);
+      discardCount += meld.length; displayDiscardCount(); meld = [...trick]; trick = [];
+      trickLead=(trickLead+1)%NUM_PLAYERS; currentPlayer=trickLead; turnPhase="LEAD"; selectedCards=[];
+      updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons(); displayWinningMeld();
+    }
+    function processSpecialEndOfTrick() {
+      logAction("special return resolved: winning combo discarded", undefined, meld);
+      discardCount += meld.length; meld = [];
+      trick = [];
+      displayWinningMeld(); displayDiscardCount();
+      trickLead=(trickLead+1)%NUM_PLAYERS; currentPlayer=trickLead; turnPhase="LEAD"; selectedCards=[];
+      updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons(); displayWinningMeld();
     }
 
-    function partnerCanPass() {
-      // Partner can pass only if there is *no possible combination* (adding 1–3 cards) that would complete a valid meld (and beat winning meld if applicable)
-      return !canPartnerCompleteMeld(hands[currentPlayer], trick, (meld.length > 0 ? meld : null));
-    }
-
-    function validateLeadPlay(selectedCards, playerNum, hand, gameState) {
-      // Lead must play 1–3 cards
-      return selectedCards.length >= 1 && selectedCards.length <= 3;
-      // (You can further restrict here if you want only "partial" possible meld bases. For now we allow any 1–3 cards; it's only after partner contribution the valid meld enforcement kicks in.)
-    }
-    function validateFollowPlay(selectedCards, playerNum, hand, leadCards, gameState) {
-      let trick = leadCards.concat(selectedCards);
-
-      // If partner is passing:
-      if (selectedCards.length === 0) {
-        // Allow pass only if cannot complete meld per rules
-        return partnerCanPass();
-      }
-      // Must form valid meld with combined trick
-      let candidate = getMeldTypeInfo(trick);
-      if (!candidate) return false;
-      if (meld.length === 0) {
-        return true;
-      } else {
-        // Must beat meld if established
-        return canBeatWinningMeld(trick, meld);
-      }
-    }
-    function validateMeld(trickCards, gameState) {
-      return getMeldTypeInfo(trickCards) !== null;
-    }
-
-    /********* GAMEPLAY LOGIC ***********/
-    function toggleCard(idx) {
-      if(turnPhase === "LEAD") {
-        if(selectedCards.includes(idx)) selectedCards = selectedCards.filter(i=>i!==idx);
-        else if(selectedCards.length < 3) selectedCards.push(idx);
-      }
-      if(turnPhase === "PARTNER") {
-        if(selectedCards.includes(idx)) selectedCards = selectedCards.filter(i=>i!==idx);
-        else if(selectedCards.length < 3) selectedCards.push(idx);
-      }
-      displayHands(); updateActionButtons();
-    }
-
+    // ----- PARTNER/LEAD/SUBMIT LOGIC -----
     function submitLead() {
       const toPlay = selectedCards.map(i => hands[currentPlayer][i]);
-      if(!validateLeadPlay(toPlay,currentPlayer,hands[currentPlayer],{})){alert("Lead play invalid!");return;}
-      logAction(`played`, currentPlayer, toPlay);
+      logAction("played", currentPlayer, toPlay);
       selectedCards.sort((a,b)=>b-a).forEach(i=>hands[currentPlayer].splice(i,1));
       trick = [...toPlay]; selectedCards = [];
       displayHands(); displayTrick(); updateActionButtons();
@@ -451,16 +721,38 @@
       currentPlayer=partner; turnPhase="PARTNER";
       updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons();
     }
-
+    function leadPass() {
+      logAction(`lead passed, winning combo discarded`, currentPlayer, meld);
+      discardCount += meld.length;
+      meld = [];
+      trick = [];
+      displayWinningMeld(); displayDiscardCount();
+      trickLead=(trickLead+1)%NUM_PLAYERS;
+      currentPlayer = trickLead;
+      turnPhase = "LEAD"; selectedCards = [];
+      updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons();
+    }
     function partnerPass() {
       logAction(`passed`, currentPlayer);
-      // Trick remains as-is; since no meld, previous meld wins
+      if (meld.length === 0 && trick.length === 1) {
+        // ---- SOLO MODE TRIGGER ----
+        triggerSoloMode(currentPlayer, trick[0]);
+        trick = [];
+        displayTrick();
+        return;
+      }
+      if ((meld.length === 0 && trick.length > 1) || (meld.length > 0)) {
+        specialPickerState = {
+          availableIdxs: trick.map((_,i)=>i),
+        };
+        turnPhase = "SELECT_LEAD_PICK";
+        updateForSpecialPicker();
+        return;
+      }
       processEndOfTrick();
     }
-
     function submitPartner() {
       const toPlay = selectedCards.map(i=>hands[currentPlayer][i]);
-      if(!validateFollowPlay(toPlay,currentPlayer,hands[currentPlayer],trick,{})){alert("Partner play invalid or must play if able!");return;}
       logAction("added", currentPlayer, toPlay);
       selectedCards.sort((a,b)=>b-a).forEach(i=>hands[currentPlayer].splice(i,1));
       trick = [...trick, ...toPlay]; selectedCards = [];
@@ -468,42 +760,75 @@
       processEndOfTrick();
     }
 
-    function processEndOfTrick() {
-      // If no partner action, trick left as is
-      let completed = trick.length > 0 ? getMeldTypeInfo(trick) : null;
-      if (completed && (meld.length === 0 || canBeatWinningMeld(trick, meld))) {
-        logAction("meld/played cards become new winning meld", undefined, trick);
-        discardCount += meld.length; displayDiscardCount(); meld = [...trick];
-      } else {
-        logAction("meld/played cards discarded", undefined, trick);
-        discardCount += trick.length; displayDiscardCount();
-      }
+    // ----- SOLO MODE INTEGRATION -----
+    function triggerSoloMode(passedPlayer, highCard){
+      soloMode = true;
+      soloPassCount = 0;
+      lastSoloPlayer = null;
+      soloInitiator = passedPlayer;
+      meld = [highCard];
       trick = [];
-      trickLead = (trickLead + 1) % NUM_PLAYERS;
-      currentPlayer = trickLead;
-      turnPhase = "LEAD"; selectedCards = [];
-      updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons(); displayWinningMeld();
+      logAction("SOLO MODE triggered.", passedPlayer, meld);
+      displayWinningMeld();
+      document.getElementById('solo-mode').innerHTML = '<span class="solo-flash">SOLO MODE!</span>';
+      currentPlayer = (passedPlayer + 1) % NUM_PLAYERS;
+      displayHands();
+      displayTrick(); 
+      updateTurnIndicator();
+      updateActionButtons();
+    }
+    function advanceSoloModeTurn(){
+      currentPlayer = (currentPlayer + 1) % NUM_PLAYERS;
+
+
+  
+      if (soloPassCount >= 3) {
+  soloMode = false;
+  soloPassCount = 0;
+  document.getElementById('solo-mode').innerHTML = "";
+  logAction("SOLO MODE ended. Normal play resumes.");
+  if (lastSoloPlayer !== null) {
+    currentPlayer = lastSoloPlayer;
+    trickLead = lastSoloPlayer;
+  }
+  meld = [];
+  lastSoloPlayer = null;
+  soloInitiator = null;
+  turnPhase = "LEAD";
+  selectedCards = [];
+  // ---- ENSURE UI is fully refreshed for correct player and phase ----
+  updateTurnIndicator();
+  displayHands();
+  updateActionButtons();
+  displayTrick();
+  displayWinningMeld();
+  return;
+}
+      updateTurnIndicator();
+      displayHands();
+      updateActionButtons();
+      displayTrick();
     }
 
-    /********* GAME START/RESET ***********/
+
+    // ----- GAME START -----
     function startGame() {
       gameLog = [];
       dealHands();
       draftPhase = true;
       draftCards = [deck.pop(), deck.pop()];
       draftStep = 0;
-
-      currentPlayer=0; trick=[]; trickLead=0; turnPhase="LEAD"; selectedCards=[]; meld=[]; discardCount=0; soloMode = false; specialPickerState = null;
+      currentPlayer=0; trick=[]; trickLead=0; turnPhase="LEAD"; selectedCards=[]; meld=[]; discardCount=0; specialPickerState=null;
+      soloMode = false; soloPassCount = 0; lastSoloPlayer = null; soloInitiator = null;
       updateTurnIndicator(); displayHands(); displayTrick(); updateActionButtons(); displayWinningMeld(); displayDiscardCount();
       document.getElementById('solo-mode').innerHTML = "";
       document.getElementById('special-picker').innerHTML = "";
       showDraftStep();
       renderGameLog();
-      logAction("Game started and cards dealt--v3");
+      logAction("Game started and cards dealt");
       logAction("Draft phase: two cards to be assigned before game");
     }
     window.onload = startGame;
   </script>
 </body>
 </html>
-
