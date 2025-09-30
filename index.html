@@ -835,8 +835,10 @@
                     const isFirstPicker = draftState.currentPickerIndex === 0;
                     const canWinByDiscarding = currentPicker.hand.length === 0;
                     const isAggressiveEndGame = currentPicker.hand.length <= 4;
+                    const failedWithSingleCard = draftState.cards.length === 1 && draftState.pickOrder.length === 1;
+
                     
-                    if (isFirstPicker && (canWinByDiscarding || isAggressiveEndGame) && draftState.wasLeadAttempt) {
+                    if (isFirstPicker && draftState.wasLeadAttempt && (canWinByDiscarding || isAggressiveEndGame || failedWithSingleCard)) {
                         draftState.draftMode = 'discard';
                     } else {
                         draftState.draftMode = 'take';
