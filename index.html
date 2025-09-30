@@ -994,6 +994,8 @@
                 }
                 
                 const isLeadingTrick = lastValidPlay.type === 'none' && currentTurn === trickWinnerId;
+                
+                const teamIsInEndGame = player.hand.length <= 4 || partner.hand.length <= 4;
 
                 if (!isLeadingTrick) {
                     const opponentTeam = player.team === 0 ? 1 : 0;
@@ -1085,7 +1087,7 @@
 
                 if (validInitiations.length > 0) {
                      validInitiations.sort((a, b) => {
-                        if (isLeadingTrick) {
+                        if (isLeadingTrick || teamIsInEndGame) {
                             if (a.length !== b.length) return a.length - b.length;
                             const aValue = a.sort((c1,c2) => c1.value - c2.value)[0].value;
                             const bValue = b.sort((c1,c2) => c1.value - c2.value)[0].value;
