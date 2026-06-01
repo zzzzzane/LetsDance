@@ -697,32 +697,38 @@
             return { type: 'invalid', cards };
         }
 
-        function verifyMeldLegality(attempt, currentActive, handCount, boardCount) {
-            if (attempt.type === 'invalid') return "Invalid meld structural layout.";
-            if (attempt.type === 'Bomb') {
-                if (sharedBoard.length > 0 && (handCount === 0 || boardCount === 0)) return "Love Bombs require components from both systems.";
-                if (currentActive && currentActive.type === 'Bomb' && attempt.value <= currentActive.value) return `Rival Bomb rank is dominant. Must surpass ${currentActive.value}.`;
-                return null;
-            }
-            if (isSinglesMode) {
-                if (attempt.type !== 'Single') return "Singles constraint active. Match rank or detonate Love Bomb.";
-                if (handCount + boardCount !== 1) return "Select exactly 1 card.";
-                if (currentActive && attempt.value <= currentActive.value) return `Rank too low. Must surpass ${currentActive.value}.`;
-                return null;
-            }
-            
-            if (sharedBoard.length === 0) {
-                if (attempt.type !== 'Single') return "Board depleted. Lead requires single card play format.";
-                return null;
-            }
+function verifyMeldLegality(attempt, currentActive, handCount, boardCount) {
+    if (attempt.type === 'invalid') return "Invalid meld structural layout.";
+    
+    // 1. Handle Bomb Logic (Bombs ignore normal Singles rules)
+    if (attempt.type === 'Bomb') {
+        if (sharedBoard.length > 0 && (handCount === 0 || boardCount === 0)) return "Love Bombs require components from both systems.";
+        if (currentActive && currentActive.type === 'Bomb' && attempt.value <= currentActive.value) return `Rival Bomb rank is dominant. Must surpass ${currentActive.value}.`;
+        return null;
+    }
+    
+    // 2. Handle Singles Mode Logic
+    if (isSinglesMode) {
+        if (attempt.type !== 'Single') return "Singles constraint active. Match rank or detonate Love Bomb.";
+        if (handCount + boardCount !== 1) return "Select exactly 1 card.";
+        if (currentActive && attempt.value <= currentActive.value) return `Rank too low. Must surpass ${currentActive.value}.`;
+        return null; // Bypasses the linking rule below entirely!
+    }
+    
+    // 3. Handle Standard Complex Combination Rules
+    if (sharedBoard.length === 0) {
+        if (attempt.type !== 'Single') return "Board depleted. Lead requires single card play format.";
+        return null;
+    }
 
-            if (handCount === 0 || boardCount === 0) return "Melds must link both hand cards and shared board cards.";
-            if (!currentActive) { if (attempt.type === 'Single') return "Opening lead requires complex combo composition."; return null; }
-            if (currentActive.type === 'Bomb') return "Love Bomb detonation active. Counter-bomb required.";
-            if (attempt.type !== currentActive.type) return `Meld shape mismatch. Expected matching ${currentActive.type}.`;
-            if (attempt.value <= currentActive.value) return `Insufficient rank power. Must beat value ${currentActive.value}.`;
-            return null;
-        }
+    // This check is now correctly restricted ONLY to normal complex combo matching
+    if (handCount === 0 || boardCount === 0) return "Melds must link both hand cards and shared board cards.";
+    if (!currentActive) { if (attempt.type === 'Single') return "Opening lead requires complex combo composition."; return null; }
+    if (currentActive.type === 'Bomb') return "Love Bomb detonation active. Counter-bomb required.";
+    if (attempt.type !== currentActive.type) return `Meld shape mismatch. Expected matching ${currentActive.type}.`;
+    if (attempt.value <= currentActive.value) return `Insufficient rank power. Must beat value ${currentActive.value}.`;
+    return null;
+}
 
         function playTurn() {
             if (currentPlayer !== 'player' || isPassing) return;
