@@ -3,1314 +3,962 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Partnership Shed</title>
+    <title>Woo - High Definition Scale</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;700;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #052e16; /* Dark Green */
-            color: white;
-            overflow: hidden;
-            touch-action: manipulation;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden; /* Lock viewport completely */
         }
 
-        .game-table {
-            display: grid;
-            grid-template-areas:
-                ". north ."
-                "west center east"
-                ". south .";
-            grid-template-rows: auto 1fr auto;
-            grid-template-columns: 1.5fr 2fr 1.5fr;
+        /* Fluid wrapper optimized for large, high-res desktop viewports */
+        .game-container {
+            display: flex;
+            flex-direction: column;
             height: 100vh;
             width: 100vw;
-            padding: 1rem;
-            position: relative;
-        }
-
-        .player-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            max-width: 1920px; /* Prevents extreme stretching on ultra-wides */
+            margin: 0 auto;
+            padding: 1.5vh 1.5vw;
+            box-sizing: border-box;
+            gap: 2vh;
+            transition: padding-right 0.3s ease;
         }
         
-        #north-area {
-            grid-area: north;
-            justify-content: flex-start;
-            padding-top: 1rem;
-        }
-        #south-area {
-            grid-area: south;
-            justify-content: flex-end;
-            padding-bottom: 1rem;
-            gap: 1rem;
-            flex-direction: column-reverse;
-        }
-        #west-area, #east-area {
-            max-height: 100%;
-            overflow: hidden;
-            padding: 1rem 0;
-            justify-content: flex-start;
-        }
-        #west-area { grid-area: west; }
-        #east-area { grid-area: east; }
-        
-        .play-area {
-            grid-area: center;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            border-radius: 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-            position: relative;
+        body.log-open .game-container {
+            padding-right: calc(340px + 1.5vw);
         }
 
-        #play-slots-container {
-            position: absolute;
-            inset: 0;
-            display: grid;
-            grid-template-areas: "n n n" "w . e" "s s s";
-            grid-template-rows: 1fr auto 1fr;
-            grid-template-columns: 1fr auto 1fr;
-            padding: 1rem;
-        }
-        .play-slot {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 8px;
-            transition: background-color 0.3s;
-        }
-        .play-slot.active-combo {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-        #north-play-slot { grid-area: n; align-items: flex-start; }
-        #south-play-slot { grid-area: s; align-items: flex-end; }
-        #west-play-slot { grid-area: w; justify-content: flex-start; }
-        #east-play-slot { grid-area: e; justify-content: flex-end; }
-
-
-        .player-info {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            background-color: rgba(0,0,0,0.4);
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            margin-bottom: 0.5rem;
-            border: 2px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .player-info.active-turn {
-            border-color: #3b82f6;
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
-        }
-
-        .hand {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 65px;
-        }
-
-        #west-area .hand, #east-area .hand {
-            flex-direction: column;
-            min-height: auto;
-            min-width: 45px;
-        }
-
+        /* Upscaled card dimensions */
         .card {
-            width: 42px;
-            height: 60px;
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            font-size: 1rem;
-            position: relative;
+            height: clamp(90px, 16vh, 170px);
+            aspect-ratio: 57 / 87;
+            border-radius: 8px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            transition: transform 0.2s ease-in-out, border 0.2s;
+            justify-content: space-between;
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.6);
+            position: relative;
             cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, opacity 0.3s ease;
             user-select: none;
+            background-size: cover;
+            background-position: center;
+            background-color: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 6px;
             flex-shrink: 0;
         }
 
-        .hand .card { margin-left: -21px; }
-        .hand .card:first-child { margin-left: 0; }
-        #west-area .hand .card, #east-area .hand .card { margin-left: 0; margin-top: -52px; }
-        #west-area .hand .card:first-child, #east-area .hand .card:first-child { margin-top: 0; }
+        .card[data-value="1"] { background-image: url('Woo_Cards_57_x_87_mm_01.jpg'), url('Woo_Cards_57_x_87_mm_1.jpg'); }
+        .card[data-value="2"] { background-image: url('Woo_Cards_57_x_87_mm_02.jpg'), url('Woo_Cards_57_x_87_mm_2.jpg'); }
+        .card[data-value="3"] { background-image: url('Woo_Cards_57_x_87_mm_03.jpg'), url('Woo_Cards_57_x_87_mm_3.jpg'); }
+        .card[data-value="4"] { background-image: url('Woo_Cards_57_x_87_mm_04.jpg'), url('Woo_Cards_57_x_87_mm_4.jpg'); }
+        .card[data-value="5"] { background-image: url('Woo_Cards_57_x_87_mm_05.jpg'), url('Woo_Cards_57_x_87_mm_5.jpg'); }
+        .card[data-value="6"] { background-image: url('Woo_Cards_57_x_87_mm_06.jpg'), url('Woo_Cards_57_x_87_mm_6.jpg'); }
+        .card[data-value="7"] { background-image: url('Woo_Cards_57_x_87_mm_07.jpg'), url('Woo_Cards_57_x_87_mm_7.jpg'); }
+        .card[data-value="8"] { background-image: url('Woo_Cards_57_x_87_mm_08.jpg'), url('Woo_Cards_57_x_87_mm_8.jpg'); }
+        .card[data-value="9"] { background-image: url('Woo_Cards_57_x_87_mm_09.jpg'), url('Woo_Cards_57_x_87_mm_9.jpg'); }
 
+        .card:hover {
+            transform: translateY(-12px) scale(1.08);
+            box-shadow: 0 16px 28px -4px rgba(0, 0, 0, 0.8);
+            border-color: rgba(255, 255, 255, 0.4);
+            z-index: 50 !important;
+        }
         .card.selected {
-            transform: translateY(-15px);
-            border: 2px solid #3b82f6;
-        }
-        
-        .card.animating-play {
-            position: fixed;
-            z-index: 100;
-            transition: all 0.5s ease-out;
+            transform: translateY(-24px);
+            box-shadow: 0 0 0 4px #6366f1, 0 16px 32px -4px rgba(99, 102, 241, 0.6);
+            border-color: #818cf8;
+            z-index: 40 !important;
         }
 
-        .card .center-rank {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .card .corner-rank {
-            position: absolute;
-            font-size: 0.75rem;
-            font-weight: 500;
-            line-height: 1;
-        }
-        .card .top-left {
-            top: 4px;
-            left: 5px;
-        }
-        .card .bottom-right {
-            bottom: 4px;
-            right: 5px;
-            transform: rotate(180deg);
-        }
-
-        .card-back {
-            background: linear-gradient(135deg, #4b5563 25%, transparent 25%) -20px 0, linear-gradient(225deg, #4b5563 25%, transparent 25%) -20px 0, linear-gradient(315deg, #4b5563 25%, transparent 25%), linear-gradient(45deg, #4b5563 25%, transparent 25%);
-            background-size: 40px 40px;
-            background-color: #374151;
-        }
-
-        .controls {
+        /* Dynamically overlapped fan layout */
+        .overlapping-hand {
             display: flex;
-            gap: 1rem;
-            position: relative;
-            z-index: 10;
-        }
-
-        .control-btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .control-btn:disabled {
-            background-color: #4b5563;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-        
-        #play-btn { background-color: #16a34a; }
-        #play-btn:hover:not(:disabled) { background-color: #15803d; }
-        #pass-btn { background-color: #d97706; }
-        #pass-btn:hover:not(:disabled) { background-color: #b45309; }
-        
-        .message-box {
-            transition: opacity 0.5s, transform 0.5s;
-        }
-
-        .helper-container {
-            position: absolute;
-            top: 1rem;
-            z-index: 20;
-            background-color: rgba(0,0,0,0.6);
-            border-radius: 8px;
-            backdrop-filter: blur(4px);
-            max-width: 250px;
-        }
-        #game-log-container { right: 1rem; }
-        #combos-helper-container { left: 1rem; }
-
-        .helper-toggle-btn {
-            width: 100%;
-            padding: 0.5rem 1rem;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 8px 8px 0 0;
-            transition: background-color 0.2s;
-        }
-        .helper-container.expanded .helper-toggle-btn {
-             background: rgba(255,255,255,0.2);
-        }
-        .helper-content-wrapper {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-in-out;
-        }
-        .helper-container.expanded .helper-content-wrapper {
-            max-height: 70vh;
-        }
-        .helper-content {
-            padding: 0.5rem;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        .log-message, .helper-item {
-            padding: 0.25rem 0.25rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.8rem;
-            line-height: 1.4;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 4px;
-        }
-         .log-message:last-child, .helper-item:last-child {
-            border-bottom: none;
-        }
-        .helper-item { flex-direction: column; align-items: flex-start; gap: 2px; padding: 0.5rem; }
-        .helper-item strong { color: #a0c4ff; }
-        .helper-example { display: flex; gap: 4px; align-items: center; }
-
-        .log-card-icon {
-            display: inline-flex;
             justify-content: center;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 30px;
+        }
+        .overlapping-hand .card {
+            margin-left: -2.5vw;
+        }
+        .overlapping-hand .card:first-child {
+            margin-left: 0;
+        }
+
+        .board-area {
+            min-height: 17vh;
+            width: 100%;
+            border-radius: 14px;
+            border: 2px dashed #334155;
+            display: flex;
             align-items: center;
-            width: 18px;
-            height: 18px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #1f2937;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 8px;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            transition: border-color 0.3s ease;
         }
-
-        #draft-overlay {
-            transition: opacity 0.5s;
+        .board-area.selectable-zone {
+            border-color: #f59e0b;
+            background-color: rgba(245, 158, 11, 0.05);
         }
-
-        #draft-options button {
-            padding: 0.5rem 1rem;
+        
+        .card-back {
+            background-image: url('Woo_Cards_57_x_87_mm_back.jpg');
+            background-size: cover;
+            background-position: center;
+            background-color: #312e81; 
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: inset 0 0 16px rgba(0,0,0,0.7);
+        }
+        
+        .opponent-hand-container .card-back {
+            height: clamp(70px, 12vh, 130px);
+            aspect-ratio: 57 / 87;
+            margin-left: -2vw;
+            pointer-events: none;
             border-radius: 6px;
-            border: 1px solid white;
-            background: transparent;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.2s;
+            box-shadow: -4px 4px 8px rgba(0,0,0,0.6);
+            border: 1.5px solid #d97706; 
         }
-        #draft-options button:hover {
-            background-color: rgba(255,255,255,0.1);
+        .opponent-hand-container .card-back:first-child { margin-left: 0; }
+        
+        .draw-pile .card-back {
+            height: clamp(90px, 16vh, 170px);
+            aspect-ratio: 57 / 87;
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 5px 5px 0px #0f172a, 10px 10px 0px #1e293b;
         }
-        #draft-options button.active {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
+        .draw-pile-count {
+            position: absolute;
+            bottom: -2.5vh;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+        .btn {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            font-weight: 700;
+            padding: 1vh 2.5vw;
+            border-radius: 0.6rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            font-size: clamp(0.8rem, 1.1vw, 1rem);
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -4px rgba(0, 0, 0, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        #restart-btn {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 1.5rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            padding: 0;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+            background-color: #334155;
+            border: 1px solid #475569;
+        }
+        .mini-card {
+            display: inline-flex;
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 4px;
+            margin: 0 0.15rem;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 900;
+            background-color: #0f172a; 
+            border: 1px solid #334155;
+        }
+        .mini-card[data-value="1"] { color: #ff914d; } 
+        .mini-card[data-value="2"] { color: #38b6ff; } 
+        .mini-card[data-value="3"] { color: #ff66c4; } 
+        .mini-card[data-value="4"] { color: #5271ff; } 
+        .mini-card[data-value="5"] { color: #fbc02d; } 
+        .mini-card[data-value="6"] { color: #00c2cb; } 
+        .mini-card[data-value="7"] { color: #ffde59; } 
+        .mini-card[data-value="8"] { color: #7ed957; } 
+        .mini-card[data-value="9"] { color: #f8fafc; }
+        .mini-card.board-origin { border: 1.5px dashed #f59e0b !important; }
+        
+        .card-fly {
+            position: fixed;
+            z-index: 1000;
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease, scale 0.5s ease;
+            pointer-events: none;
         }
 
+        /* Screen Shake Mechanics for Bomb Detonations */
+        @keyframes shockwave-shake {
+            0% { transform: translate(0, 0); }
+            10% { transform: translate(-8px, 5px) rotate(-1deg); }
+            20% { transform: translate(6px, -6px) rotate(1deg); }
+            30% { transform: translate(-5px, 2px) rotate(0deg); }
+            40% { transform: translate(4px, 4px) rotate(1deg); }
+            50% { transform: translate(-3px, -2px) rotate(-1deg); }
+            60% { transform: translate(2px, 2px) rotate(0deg); }
+            70% { transform: translate(-1px, 1px) rotate(0deg); }
+            100% { transform: translate(0, 0); }
+        }
+        .detonation-shake {
+            animation: shockwave-shake 0.6s ease-in-out;
+        }
 
+        /* Heart Particle Emitters */
+        .love-particle {
+            position: fixed;
+            pointer-events: none;
+            font-size: 24px;
+            z-index: 9999;
+            filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.8));
+            animation: eruptParticle 1s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        @keyframes eruptParticle {
+            0% { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(var(--rot)); opacity: 0; }
+        }
+
+        /* Flying Box Art Theater Styling */
+        .flying-box-art {
+            position: fixed;
+            width: clamp(150px, 25vh, 280px);
+            aspect-ratio: 1080 / 1920;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            z-index: 99999;
+            pointer-events: none;
+            object-fit: cover;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+        }
+
+        #play-log-sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 340px;
+            background-color: #1e293b;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.7, 0, 0.3, 1);
+            z-index: 50;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #334155;
+        }
+        body.log-open .game-container { padding-right: calc(340px + 1.5vw); }
+        body.log-open #play-log-sidebar { transform: translateX(0); }
+        .log-entry-wrapper { display: flex; flex-direction: column; margin-bottom: 0.75rem; width: 100%; }
+        .log-bubble {
+            max-width: 90%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.75rem;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap; 
+            gap: 0.25rem;
+        }
+        .log-computer { align-self: flex-end; background-color: #334155; color: #f1f5f9; border-bottom-right-radius: 0.1rem; }
+        .log-player { align-self: flex-start; background-color: #312e81; color: #f8fafc; border-bottom-left-radius: 0.1rem; border: 1px solid #4338ca; }
+        .log-system { align-self: center; color: #ef4444; font-style: normal; font-weight: bold; text-align: center; border-bottom: 1px solid #475569; width: 100%; padding: 0.5rem 0; }
+        .log-notice { align-self: center; background-color: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); text-align: center; width: 100%; padding: 0.4rem; border-radius: 0.5rem; }
     </style>
 </head>
-<body>
+<body class="bg-slate-950">
 
-    <div class="game-table" id="game-table">
-        <!-- Combos Helper -->
-        <div id="combos-helper-container" class="helper-container">
-            <button id="combos-toggle-btn" class="helper-toggle-btn">Combos ▾</button>
-            <div class="helper-content-wrapper">
-                <div id="combos-content" class="helper-content"></div>
-            </div>
+    <div id="play-log-sidebar">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-indigo-400 tracking-wide">Theater Play Log</h2>
+            <button id="close-log-btn" class="text-2xl text-slate-400 hover:text-rose-400">&times;</button>
         </div>
-
-        <!-- Game Log -->
-        <div id="game-log-container" class="helper-container">
-            <button id="log-toggle-btn" class="helper-toggle-btn">Game Log ▾</button>
-            <div class="helper-content-wrapper">
-                <div id="log-content" class="helper-content"></div>
-            </div>
-        </div>
-        
-        <!-- Player North (Partner) -->
-        <div id="north-area" class="player-area">
-            <div id="north-info" class="player-info">
-                <span class="font-bold">North (Partner)</span>
-                <span id="north-card-count"></span>
-            </div>
-            <div id="north-hand" class="hand"></div>
-        </div>
-
-        <!-- Player West -->
-        <div id="west-area" class="player-area">
-            <div id="west-info" class="player-info">
-                <span class="font-bold">West</span>
-                <span id="west-card-count"></span>
-            </div>
-            <div id="west-hand" class="hand"></div>
-        </div>
-        
-        <!-- Center Play Area -->
-        <div class="play-area">
-            <div id="score-display" class="text-xl font-bold mb-2"></div>
-            <div id="last-play-info" class="text-sm text-gray-300 mb-2"></div>
-            <div id="play-slots-container">
-                <div id="north-play-slot" class="play-slot hand"></div>
-                <div id="west-play-slot" class="play-slot hand"></div>
-                <div id="east-play-slot" class="play-slot hand"></div>
-                <div id="south-play-slot" class="play-slot hand"></div>
-            </div>
-        </div>
-
-        <!-- Player East -->
-        <div id="east-area" class="player-area">
-            <div id="east-info" class="player-info">
-                <span class="font-bold">East</span>
-                <span id="east-card-count"></span>
-            </div>
-            <div id="east-hand" class="hand"></div>
-        </div>
-
-        <!-- Player South (You) -->
-        <div id="south-area" class="player-area">
-            <div id="south-info" class="player-info">
-                <span class="font-bold">You (South)</span>
-                 <span id="south-card-count"></span>
-            </div>
-            <div id="south-hand" class="hand"></div>
-            <div class="controls">
-                <button id="play-btn" class="control-btn">Play Selected</button>
-                <button id="pass-btn" class="control-btn">Pass</button>
-            </div>
-        </div>
+        <div id="play-log-content" class="flex-grow overflow-y-auto space-y-2 pr-1"></div>
     </div>
     
-    <!-- Message Box -->
-    <div id="message-box" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 border-2 border-blue-500 p-8 rounded-xl shadow-2xl text-center opacity-0 -translate-y-10 z-50">
-        <h3 id="message-title" class="text-3xl font-bold mb-4"></h3>
-        <p id="message-text" class="text-lg mb-6"></p>
-        <button id="message-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">Close</button>
+    <div id="main-layout" class="game-container">
+        
+        <!-- HEADER -->
+        <div class="flex-shrink-0 flex justify-between items-center bg-slate-900/60 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-md">
+            <button id="combo-helper-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-xs font-bold transition-all">Meld Catalog ⓘ</button>
+            <div class="text-center">
+                <h1 id="game-title" class="text-2xl font-black tracking-wider text-slate-100 uppercase leading-none cursor-pointer select-none hover:text-indigo-400 transition-colors">Woo</h1>
+                <div id="score-display" class="text-xs font-bold text-indigo-400 mt-1 tracking-widest">PLAYER: 0 • COMPUTER: 0</div>
+            </div>
+            <button id="play-log-helper-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-xs font-bold transition-all">Review Actions ⓘ</button>
+        </div>
+
+        <!-- MIDDLEGROUND PLAYSPACE -->
+        <div class="flex-grow flex flex-col justify-between gap-3 min-h-0">
+            
+            <!-- Shared Drafting Deck Setup -->
+            <div class="grid grid-cols-4 gap-4 items-center bg-slate-900/20 p-2 rounded-2xl border border-slate-900/40">
+                <div class="col-span-1 bg-slate-900/40 p-2 rounded-xl border border-slate-900 flex flex-col items-center justify-center min-h-[19vh]">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Stock Pile</span>
+                    <div id="draw-pile" class="draw-pile"></div>
+                </div>
+                <div class="col-span-3 bg-slate-900/40 p-2 rounded-xl border border-slate-900/80 flex flex-col items-center min-h-[19vh]">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">The Shared Board (Draft Zone)</span>
+                    <div id="shared-board" class="board-area"></div>
+                </div>
+            </div>
+
+            <!-- Enemy Canopy Zone -->
+            <div class="bg-slate-900/20 p-2 rounded-2xl border border-slate-900/40 flex flex-col items-center justify-center relative">
+                <div class="flex flex-col items-center gap-0.5 mb-1 w-full">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Rival Canopy</span>
+                        <span id="opponent-card-count" class="text-[10px] text-indigo-400 font-bold">(13 Cards)</span>
+                    </div>
+                    <!-- In-house subtle text prompt line for real-time concession alerts -->
+                    <div id="rival-ticker" class="text-xs text-amber-400 font-semibold tracking-wide min-h-[1.25rem] transition-all duration-300 opacity-0 transform scale-95"></div>
+                </div>
+                <div id="opponent-hand" class="opponent-hand-container flex min-h-[13vh] py-1 px-8 justify-center w-full overflow-visible"></div>
+            </div>
+
+            <!-- Strut Play Layers -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-900/30 p-2 rounded-2xl border border-slate-900/60 flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-indigo-400/70 uppercase tracking-widest mb-1">Your Displayed Strut</span>
+                    <div id="player-trick-area" class="board-area"></div>
+                </div>
+                <div class="bg-slate-900/30 p-2 rounded-2xl border border-slate-900/60 flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-rose-400/70 uppercase tracking-widest mb-1">Rival Displayed Strut</span>
+                    <div id="computer-trick-area" class="board-area"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="flex-shrink-0 bg-slate-900/50 p-3 rounded-2xl border border-slate-800 flex flex-col items-center justify-center gap-2">
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Your Plumage Hand</span>
+                <span id="player-card-count" class="text-[10px] text-indigo-400 font-bold">(13 Cards)</span>
+            </div>
+            
+            <div class="w-full overflow-visible py-1 flex justify-center min-h-[18vh]">
+                <div id="player-hand" class="overlapping-hand"></div>
+            </div>
+            
+            <p id="status-text" class="text-sm text-slate-300 font-medium h-5 tracking-wide text-center"></p>
+            <div id="action-buttons-container" class="flex items-center gap-6">
+                <button id="pass-btn" class="btn bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Pass</button>
+                <button id="play-btn" class="btn bg-indigo-600 hover:bg-indigo-500 text-white">Execute Meld</button>
+                <button id="next-round-btn" class="btn bg-emerald-600 hover:bg-emerald-500 text-white hidden">Advance Cycle</button>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Draft Overlay -->
-    <div id="draft-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50 opacity-0">
-        <h2 id="draft-title" class="text-3xl font-bold mb-4 text-white"></h2>
-        <div id="draft-cards-area" class="hand mb-4"></div>
-        <p id="draft-instructions" class="mt-4 text-lg text-gray-300"></p>
-        <div id="draft-options" class="mt-4 flex gap-4"></div>
-    </div>
-    
+    <button id="restart-btn" class="btn text-slate-400 hover:text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 21v-5h5"></path></svg>
+    </button>
+
     <script>
-        const SUITS = ['A', 'B', 'C', 'D', 'E', 'F']; // Used to create 6 copies of each card
-        const RANKS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-        const RANK_VALUES = RANKS.reduce((acc, rank, i) => ({ ...acc, [rank]: i }), {});
-
-        const CARD_COLORS = {
-            '1': '#ffadad', // Pastel Red/Pink
-            '2': '#ffd6a5', // Pastel Orange/Peach
-            '3': '#fdffb6', // Pastel Yellow
-            '4': '#caffbf', // Pastel Green
-            '5': '#9bf6ff', // Pastel Cyan
-            '6': '#a0c4ff', // Pastel Blue
-            '7': '#bdb2ff', // Pastel Purple
-            '8': '#ffc6ff', // Pastel Magenta
-            '9': '#e9ecef'  // Pastel Gray
-        };
-
-        let players = [];
-        let currentTurn = 0;
-        let playPile = [];
-        let lastValidPlay = { type: 'none', rankValue: -1, cards: [] };
-        let pendingPlay = { initiatorId: null, cards: [] };
-        let passes = 0;
-        let trickWinnerId = 0;
-        let gameLog = [];
-        let draftState = null;
-        let failedPlays = []; // AI Memory for this round
-        let sharedKnowledge = {}; // AI long-term memory for the round
-
-        let teamScores = { 0: 0, 1: 0 };
-        const GAMES_TO_WIN = 2;
-        
+        const statusText = document.getElementById('status-text');
+        const playerHandElem = document.getElementById('player-hand');
+        const opponentHandElem = document.getElementById('opponent-hand');
+        const playerCardCountElem = document.getElementById('player-card-count');
+        const opponentCardCountElem = document.getElementById('opponent-card-count');
+        const sharedBoardElem = document.getElementById('shared-board');
+        const drawPileElem = document.getElementById('draw-pile');
         const playBtn = document.getElementById('play-btn');
         const passBtn = document.getElementById('pass-btn');
-        const scoreDisplay = document.getElementById('score-display');
+        const nextRoundBtn = document.getElementById('next-round-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const playerTrickAreaElem = document.getElementById('player-trick-area');
+        const computerTrickAreaElem = document.getElementById('computer-trick-area');
+        const scoreDisplayElem = document.getElementById('score-display');
+        const playLogContentElem = document.getElementById('play-log-content');
+        const mainLayoutElem = document.getElementById('main-layout');
+        const rivalTickerElem = document.getElementById('rival-ticker');
+        const gameTitleElem = document.getElementById('game-title');
 
-
-        // --- Core Game Logic ---
+        let playerHand, computerHand, drawDeck, sharedBoard, selectedHandCards, selectedBoardCards, currentPlayer, lastPlayedCombo, isPassing, isSinglesMode;
+        let playerTrickPlay, computerTrickPlay, playerScore = 0, computerScore = 0, lastRoundWinner = null, playLog = [];
+        let tickerTimeout = null;
+        let titleClickCount = 0;
+        
         function createDeck() {
-            const deck = [];
-            for (const suit of SUITS) {
-                for (const rank of RANKS) {
-                    deck.push({ suit, rank, value: RANK_VALUES[rank], id: `${rank}-${suit}` });
-                }
-            }
+            const deck = []; let id = 0;
+            for (let i = 1; i <= 9; i++) { for (let j = 0; j < 6; j++) { deck.push({ value: i, id: id++ }); } }
             return deck;
         }
-
         function shuffleDeck(deck) {
-            for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [deck[i], deck[j]] = [deck[j], deck[i]];
-            }
+            for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
         }
+        function startGame() { playerScore = 0; computerScore = 0; lastRoundWinner = null; playLog = []; startRound(); }
+
+        function startRound() {
+            addToLog(`--- Cycle Round ${playerScore + computerScore + 1} ---`);
+            const deck = createDeck(); shuffleDeck(deck);
+            playerHand = deck.splice(0, 13).sort((a,b) => a.value - b.value);
+            computerHand = deck.splice(0, 13).sort((a,b) => a.value - b.value);
+            sharedBoard = deck.splice(0, 4); drawDeck = deck;
+            selectedHandCards = []; selectedBoardCards = []; lastPlayedCombo = null;
+            currentPlayer = lastRoundWinner === null ? (Math.random() < 0.5 ? 'player' : 'computer') : (lastRoundWinner === 'player' ? 'computer' : 'player');
+            isPassing = false; isSinglesMode = false; playerTrickPlay = []; computerTrickPlay = [];
+            playBtn.classList.remove('hidden'); passBtn.classList.remove('hidden'); nextRoundBtn.classList.add('hidden');
+            renderAll();
+            updateStatus(`${currentPlayer === 'player' ? 'Your lead!' : 'Rival preparing strategy...'}`);
+            if (currentPlayer === 'computer') { disableControls(); setTimeout(computerTurn, 1200); }
+        }
+
+        function disableControls() { playBtn.disabled = true; passBtn.disabled = true; }
         
-        function getPartner(playerIndex) {
-            return players[(playerIndex + 2) % 4];
+        function triggerConcessionNotice(msg, triggerSidebar = false) {
+            playLog.push({ message: msg, cards: [], type: 'notice' });
+            renderPlayLog();
+            if (triggerSidebar) {
+                document.body.classList.add('log-open');
+            }
         }
 
-        function initializeGame(isNewMatch = true) {
-            if (isNewMatch) {
-                teamScores = { 0: 0, 1: 0 };
-                gameLog = [];
-                addLog("A new match has started!");
-            } else {
-                addLog("Starting next round...");
-            }
-            failedPlays = []; 
-            sharedKnowledge = {}; // Reset AI strategic memory each round
+        /* Displays inline ticker information inside the Enemy Canopy zone */
+        function flashRivalTickerMessage(msg) {
+            if (tickerTimeout) clearTimeout(tickerTimeout);
+            rivalTickerElem.textContent = msg;
+            rivalTickerElem.classList.remove('opacity-0', 'scale-95');
+            rivalTickerElem.classList.add('opacity-100', 'scale-100');
             
-            renderCombosHelper(); 
-
-            const deck = createDeck();
-            shuffleDeck(deck);
-            
-            players = [
-                { id: 0, name: 'South', hand: [], isHuman: true, team: 0 },
-                { id: 1, name: 'West', hand: [], isHuman: false, team: 1 },
-                { id: 2, name: 'North', hand: [], isHuman: false, team: 0 },
-                { id: 3, name: 'East', hand: [], isHuman: false, team: 1 },
-            ];
-
-            // Deal cards
-            let playerIndex = 0;
-            for(const card of deck) {
-                players[playerIndex].hand.push(card);
-                playerIndex = (playerIndex + 1) % 4;
-            }
-
-            players.forEach(p => p.hand.sort((a,b) => a.value - b.value));
-
-            currentTurn = 0;
-            trickWinnerId = 0;
-            playPile = [];
-            lastValidPlay = { type: 'none', rankValue: -1, cards: [] };
-            pendingPlay = { initiatorId: null, cards: [] };
-            passes = 0;
-            draftState = null;
-            
-            renderAll();
+            tickerTimeout = setTimeout(() => {
+                rivalTickerElem.classList.remove('opacity-100', 'scale-100');
+                rivalTickerElem.classList.add('opacity-0', 'scale-95');
+            }, 2500);
         }
 
-        function getPlayType(cards) {
-            if (cards.length === 0) return { type: 'none', rankValue: -1 };
+        /* Flight Theater Engine for Woo_Cards_Box.jpg */
+        function launchFlyingBoxArt() {
+            const img = document.createElement('img');
+            img.src = 'Woo_Cards_Box.jpg';
+            img.className = 'flying-box-art';
             
-            const sortedCards = [...cards].sort((a, b) => a.value - b.value);
-            const ranks = sortedCards.map(c => c.rank);
-            const values = sortedCards.map(c => c.value);
-            const rankCounts = ranks.reduce((acc, rank) => { acc[rank] = (acc[rank] || 0) + 1; return acc; }, {});
-            const uniqueValues = [...new Set(values)];
+            let posX = window.innerWidth / 2 - 100;
+            let posY = window.innerHeight / 2 - 150;
+            let velX = (Math.random() * 12 + 8) * (Math.random() < 0.5 ? 1 : -1);
+            let velY = (Math.random() * 12 + 8) * (Math.random() < 0.5 ? 1 : -1);
+            let rotation = 0;
+            let rotVel = Math.random() * 4 + 2;
 
-            if (sortedCards.length === 4 && uniqueValues.length === 1) return { type: 'bomb', rankValue: values[0] };
-            if (sortedCards.length === 4 && uniqueValues.length === 2 && (uniqueValues[1] - uniqueValues[0] === 1)) {
-                 const counts = Object.values(rankCounts);
-                 if (counts[0] === 2 && counts[1] === 2) return { type: 'stairs', rankValue: values[3] };
-            }
+            img.style.left = `0px`;
+            img.style.top = `0px`;
+            img.style.transform = `translate(${posX}px, ${posY}px) rotate(${rotation}deg)`;
+            document.body.appendChild(img);
+
+            const startTime = performance.now();
             
-            const isRun = uniqueValues.length === sortedCards.length && uniqueValues.length >= 2 && uniqueValues.length <= 4 && (uniqueValues[uniqueValues.length - 1] - uniqueValues[0] === uniqueValues.length - 1);
-            if(isRun) {
-                return { type: `run-${sortedCards.length}`, rankValue: values[values.length - 1] };
-            }
-
-            if (uniqueValues.length === 1) {
-                switch(sortedCards.length) {
-                    case 3: return { type: 'triple', rankValue: values[0] };
-                    case 2: return { type: 'pair', rankValue: values[0] };
-                    case 1: return { type: 'single', rankValue: values[0] };
-                }
-            }
-            
-            return { type: 'invalid', rankValue: -1 };
-        }
-        
-        async function animateAndPlayCards(player, cardsToAnimate, fullCombo, playDetails, onComplete) {
-            playBtn.disabled = true;
-            passBtn.disabled = true;
-
-            const initiator = pendingPlay.initiatorId === null ? player : players[pendingPlay.initiatorId];
-            
-            document.querySelectorAll('.play-slot').forEach(slot => {
-                if (slot.id !== `${initiator.name.toLowerCase()}-play-slot`) {
-                     slot.innerHTML = '';
-                }
-            });
-
-            const playerInfoEl = document.getElementById(`${player.name.toLowerCase()}-info`);
-            const startRect = playerInfoEl.getBoundingClientRect();
-            const targetSlotEl = document.getElementById(`${initiator.name.toLowerCase()}-play-slot`);
-
-            const cardElements = cardsToAnimate.map((card, i) => {
-                const el = createCardElem(card, true);
-                el.classList.add('animating-play');
-                el.style.left = `${startRect.left + 15}px`;
-                el.style.top = `${startRect.top + 10}px`;
-                document.getElementById('game-table').appendChild(el);
-                return el;
-            });
-
-            await new Promise(res => setTimeout(res, 50));
-            
-            const targetRect = targetSlotEl.getBoundingClientRect();
-            const promises = cardElements.map((el, i) => {
-                return new Promise(resolve => {
-                    const totalWidth = fullCombo.length * 21;
-                    const initiatorCardCount = fullCombo.length - cardsToAnimate.length;
-                    const thisCardIndex = initiatorCardCount + i;
-
-                    el.style.left = `${targetRect.left + (targetRect.width / 2) - (totalWidth / 2) + (thisCardIndex * 21)}px`;
-                    el.style.top = `${targetRect.top + (targetRect.height / 2) - 30}px`;
-                    el.addEventListener('transitionend', resolve, { once: true });
-                });
-            });
-
-            await Promise.all(promises);
-            
-            playPile = fullCombo;
-            lastValidPlay = playDetails;
-            trickWinnerId = initiator.id;
-            
-            pendingPlay = { initiatorId: null, cards: [] };
-            passes = 0;
-
-            cardElements.forEach(el => el.remove());
-            renderAll();
-            onComplete();
-        }
-
-        function handlePlay() {
-            const player = players[currentTurn];
-            if (!player.isHuman) return;
-
-            const selectedCards = player.hand.filter(c => c.selected);
-            if (selectedCards.length === 0) return;
-
-            if (pendingPlay.initiatorId === null) {
-                if (lastValidPlay.type === 'bomb') {
-                    const isPotentialBomb = selectedCards.every(c => c.rank === selectedCards[0].rank);
-                    if (!isPotentialBomb) {
-                        showMessage("Invalid Initiation", "Only a bomb can beat a bomb. You must try for a higher bomb or pass.");
-                        return;
-                    }
-                    if (selectedCards[0].value <= lastValidPlay.rankValue) {
-                        showMessage("Invalid Bomb", "Your bomb must be a higher rank than the one on the table.");
-                        return;
-                    }
-                }
+            function updatePhysics(timestamp) {
+                const elapsed = timestamp - startTime;
                 
-                if (lastValidPlay.type !== 'none' && lastValidPlay.type !== 'bomb') {
-                    if (!canInitiationBecomeComboType(selectedCards, lastValidPlay.type)) {
-                        showMessage("Invalid Combo Type", `Your play must have the potential to form a ${formatPlayTypeForDisplay(lastValidPlay.type)} or a Bomb.`);
-                        return;
-                    }
+                posX += velX;
+                posY += velY;
+                rotation += rotVel;
+
+                const imgWidth = img.offsetWidth || 200;
+                const imgHeight = img.offsetHeight || 350;
+
+                if (posX <= 0 || posX + imgWidth >= window.innerWidth) {
+                    velX *= -1;
+                    rotVel *= -1;
+                    posX = Math.max(0, Math.min(posX, window.innerWidth - imgWidth));
+                }
+                if (posY <= 0 || posY + imgHeight >= window.innerHeight) {
+                    velY *= -1;
+                    posY = Math.max(0, Math.min(posY, window.innerHeight - imgHeight));
                 }
 
-                if (selectedCards.length > 3) {
-                    showMessage("Invalid Selection", "You can only initiate a play with 1 to 3 cards.");
-                    return;
-                }
-                if (selectedCards.length > 1) {
-                    const sortedValues = selectedCards.map(c => c.value).sort((a, b) => a - b);
-                    const uniqueValues = [...new Set(sortedValues)];
-                    const areSameRank = uniqueValues.length === 1;
-                    const arePotentialRun = uniqueValues.length === sortedValues.length && (sortedValues[sortedValues.length - 1] - sortedValues[0] < 4);
-                    const arePotentialStairs = uniqueValues.length === 2 && (uniqueValues[1] - uniqueValues[0] === 1);
+                img.style.transform = `translate(${posX}px, ${posY}px) rotate(${rotation}deg)`;
 
-                    if (!areSameRank && !arePotentialRun && !arePotentialStairs) {
-                        showMessage("Invalid Combo Start", "The cards you lead must have the potential to form a valid combo.");
-                        return;
-                    }
-                }
-                if (lastValidPlay.type === 'none' && currentTurn === trickWinnerId && selectedCards.length === 0) {
-                    showMessage("Invalid Play", "You must select cards to lead the trick.");
-                    return;
-                }
-                
-                pendingPlay = { initiatorId: player.id, cards: selectedCards };
-                
-                const selectedCardIds = new Set(selectedCards.map(c => c.id));
-                player.hand = player.hand.filter(c => !selectedCardIds.has(c.id));
-                addLog(`<strong>${player.name}</strong> initiates with: ${formatCardsForLog([...selectedCards].sort((a,b) => a.value - b.value))}`);
-
-                nextTurn(true);
-                return;
-            }
-
-            if (getPartner(currentTurn).id === pendingPlay.initiatorId) {
-                const initiator = getPartner(currentTurn);
-                const fullCombo = [...pendingPlay.cards, ...selectedCards];
-                const playDetails = getPlayType(fullCombo);
-
-                if (playDetails.type === 'invalid') {
-                    showMessage("Invalid Combo", "The combined cards do not form a valid combo.");
-                    return;
-                }
-                if (!isValidPlay(playDetails)) {
-                    let reason = "This combo is not strong enough to beat the current play.";
-                     if (lastValidPlay.type === 'bomb') reason = "Only a higher bomb can beat a bomb.";
-                    showMessage("Invalid Play", reason);
-                    return;
-                }
-                
-                player.hand = player.hand.filter(c => !c.selected);
-                addLog(`<strong>${player.name}</strong> completes with ${formatCardsForLog([...selectedCards].sort((a,b) => a.value - b.value))} to make a ${formatPlayTypeForDisplay(playDetails.type)}: ${formatCardsForLog([...fullCombo].sort((a,b) => a.value - b.value))}`);
-
-                animateAndPlayCards(player, selectedCards, fullCombo, playDetails, () => {
-                    if (checkForWin()) return;
-                    currentTurn = (initiator.id + 1) % 4;
-                    renderAll();
-                    if(!players[currentTurn].isHuman) setTimeout(executeAiTurn, 1000);
-                });
-            }
-        }
-
-        function canInitiationBecomeComboType(cards, targetType) {
-            if (cards.every(c => c.rank === cards[0].rank)) return true;
-            if (targetType === 'bomb') return false;
-
-            const uniqueValues = [...new Set(cards.map(c => c.value))];
-            
-            if (targetType.startsWith('run-')) {
-                const requiredLength = parseInt(targetType.split('-')[1]);
-                return uniqueValues.length === cards.length && (Math.max(...uniqueValues) - Math.min(...uniqueValues) < requiredLength);
-            }
-            if (targetType === 'stairs') {
-                return uniqueValues.length <= 2 && Math.abs(uniqueValues[0] - (uniqueValues[1] || uniqueValues[0])) <= 1;
-            }
-            if (targetType === 'pair' || targetType === 'triple') {
-                return uniqueValues.length === 1;
-            }
-            return false;
-        }
-        
-        function findAllValidCompletions(initiatorCards, completerHand, currentPlay) {
-            const possiblePlays = [];
-            const allSubsets = (arr) => arr.reduce((subsets, value) => subsets.concat(subsets.map(set => [value,...set])), [[]]);
-            const subsetsOfHand = allSubsets(completerHand).filter(s => s.length > 0);
-            
-            for(const subset of subsetsOfHand) {
-                const fullCombo = [...initiatorCards, ...subset];
-                const playDetails = getPlayType(fullCombo);
-                if (isValidPlay(playDetails)) {
-                     possiblePlays.push({ ...playDetails, cards: fullCombo, contributingCards: subset });
-                }
-            }
-            return possiblePlays;
-        }
-
-        function isValidPlay(playDetails) {
-            if (lastValidPlay.type === 'none') return playDetails.type !== 'invalid';
-            if (playDetails.type === 'bomb' && lastValidPlay.type !== 'bomb') return true;
-            if (lastValidPlay.type === 'bomb') return playDetails.type === 'bomb' && playDetails.rankValue > lastValidPlay.rankValue;
-            if (playDetails.type === 'single' && lastValidPlay.type === 'single') return playDetails.rankValue > lastValidPlay.rankValue;
-            if (playDetails.type === lastValidPlay.type && playDetails.rankValue > lastValidPlay.rankValue) return true;
-            return false;
-        }
-
-        function formatPlayTypeForDisplay(type) {
-            if (!type || type === 'none') return 'None';
-            if (type.startsWith('run-')) {
-                const length = type.split('-')[1];
-                return `Run of ${length}`;
-            }
-            if (type === 'stairs') return 'Stairs';
-            return type.charAt(0).toUpperCase() + type.slice(1);
-        }
-
-        function handlePass() {
-            const player = players[currentTurn];
-
-            if (pendingPlay.initiatorId !== null && getPartner(currentTurn).id === pendingPlay.initiatorId) {
-                const possibleCompletions = findAllValidCompletions(pendingPlay.cards, player.hand, lastValidPlay);
-                if (possibleCompletions.length > 0) {
-                    showMessage("Obligated to Play", "You must play to complete the combo.");
-                    return;
-                }
-            }
-            
-            if (pendingPlay.initiatorId !== null) {
-                const initiator = players[pendingPlay.initiatorId];
-                const completer = player;
-                
-                failedPlays.push({ initiatorId: initiator.id, cards: pendingPlay.cards });
-
-                const draftCards = [...pendingPlay.cards];
-                const onDraftComplete = () => {
-                    addLog(`The draft is complete.`);
-                    if (checkForWin()) return;
-                    playPile = [];
-                    lastValidPlay = { type: 'none', rankValue: -1, cards: [] };
-                    pendingPlay = { initiatorId: null, cards: [] };
-                    currentTurn = (completer.id + 1) % 4;
-                    trickWinnerId = currentTurn;
-                    addLog(`Trick ends. <strong>${players[currentTurn].name}</strong> to lead.`);
-                    renderAll();
-                    if (!players[currentTurn].isHuman) setTimeout(executeAiTurn, 1000);
-                };
-                
-                startInteractiveDraft(initiator, completer, draftCards, onDraftComplete);
-                return;
-                
-            } else {
-                addLog(`<strong>${player.name}</strong> passed.`);
-            }
-            
-            playPile = [];
-            lastValidPlay = { type: 'none', rankValue: -1, cards: [] };
-            pendingPlay = { initiatorId: null, cards: [] };
-            currentTurn = (player.id + 1) % 4;
-            trickWinnerId = currentTurn;
-            addLog(`Trick ends. <strong>${players[currentTurn].name}</strong> to lead.`);
-            renderAll();
-            if (!players[currentTurn].isHuman) setTimeout(executeAiTurn, 1000);
-        }
-
-        function nextTurn(isCompletingPlay = false) {
-            if (isCompletingPlay) currentTurn = (currentTurn + 2) % 4;
-            else currentTurn = (currentTurn + 1) % 4;
-            renderAll();
-            if (!players[currentTurn].isHuman) setTimeout(executeAiTurn, 1000);
-        }
-
-        function checkForWin() {
-            let winningPlayer = null;
-            for (const player of players) {
-                if (player.hand.length === 0) {
-                    winningPlayer = player;
-                    break;
-                }
-            }
-            if (winningPlayer) {
-                const winningTeamId = winningPlayer.team;
-                teamScores[winningTeamId]++;
-                const winningTeamName = winningTeamId === 0 ? "North/South" : "East/West";
-                if (teamScores[winningTeamId] >= GAMES_TO_WIN) {
-                    addLog(`<strong>${winningTeamName}</strong> wins the match!`);
-                    showMessage(`${winningTeamName} Wins the Match!`, `Final Score: N/S ${teamScores[0]} - E/W ${teamScores[1]}.`, { buttonText: 'New Match', onButtonClick: () => initializeGame(true) });
+                if (elapsed < 4500) {
+                    requestAnimationFrame(updatePhysics);
+                } else if (elapsed < 5000) {
+                    img.style.opacity = (1 - (elapsed - 4500) / 500);
+                    requestAnimationFrame(updatePhysics);
                 } else {
-                    addLog(`<strong>${winningTeamName}</strong> wins the round!`);
-                    showMessage(`${winningTeamName} Won the Round!`, `Current Score: N/S ${teamScores[0]} - E/W ${teamScores[1]}.`, { buttonText: 'Next Round', onButtonClick: () => initializeGame(false) });
+                    img.remove();
                 }
-                return true;
             }
-            return false;
-        }
-
-        function startInteractiveDraft(initiator, completer, cards, onComplete) {
-            let pickOrder = [];
-            if (cards.length >= 1) pickOrder.push('initiator');
-            if (cards.length >= 2) pickOrder.push('completer');
-            if (cards.length >= 3) pickOrder.push('initiator');
             
-            const wasLeadAttempt = lastValidPlay.type === 'none';
-            draftState = { initiator, completer, cards, onComplete, pickOrder, draftMode: 'take', wasLeadAttempt, currentPickerIndex: 0 };
+            requestAnimationFrame(updatePhysics);
+        }
+
+        /* Tactical Detonation Effects Engine */
+        function detonateLoveBombVFX() {
+            mainLayoutElem.classList.remove('detonation-shake');
+            void mainLayoutElem.offsetWidth; 
+            mainLayoutElem.classList.add('detonation-shake');
             
-            playBtn.disabled = true;
-            passBtn.disabled = true;
+            const heartIcons = ['💖', '💥', '💟', '🔥', '❤️'];
+            const burstX = window.innerWidth / 2;
+            const burstY = window.innerHeight / 2;
             
-            processNextDraftPick();
-        }
-
-        function processNextDraftPick() {
-            if (!draftState || draftState.currentPickerIndex >= draftState.pickOrder.length) {
-                endInteractiveDraft();
-                return;
-            }
-
-            const currentPickerRole = draftState.pickOrder[draftState.currentPickerIndex];
-            const currentPicker = draftState[currentPickerRole];
-
-            if (currentPicker.isHuman) {
-                updateDraftUIForUser();
-            } else {
-                updateDraftUIForAI(currentPicker);
-                setTimeout(() => {
-                    const isFirstPicker = draftState.currentPickerIndex === 0;
-                    const canWinByDiscarding = currentPicker.hand.length === 0;
-                    const isAggressiveEndGame = currentPicker.hand.length <= 4;
-                    const failedWithSingleCard = draftState.cards.length === 1 && draftState.pickOrder.length === 1;
-
-                    
-                    if (isFirstPicker && draftState.wasLeadAttempt && (canWinByDiscarding || isAggressiveEndGame || failedWithSingleCard)) {
-                        draftState.draftMode = 'discard';
-                    } else {
-                        draftState.draftMode = 'take';
-                    }
-                    
-                    const pickedCard = draftState.cards.sort((a, b) => a.value - b.value)[0];
-                    
-                    const cardsArea = document.getElementById('draft-cards-area');
-                    const cardElements = Array.from(cardsArea.children);
-                    const pickedCardElement = cardElements.find(el => el.dataset.cardId === pickedCard.id);
-                    if (pickedCardElement) {
-                        pickedCardElement.classList.add('selected');
-                    }
-
-                    setTimeout(() => {
-                        handleDraftPick(pickedCard);
-                    }, 800);
-                }, 1500);
+            for (let i = 0; i < 35; i++) {
+                const p = document.createElement('div');
+                p.className = 'love-particle';
+                p.textContent = heartIcons[Math.floor(Math.random() * heartIcons.length)];
+                p.style.left = `${burstX}px`;
+                p.style.top = `${burstY}px`;
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 80 + Math.random() * 320;
+                p.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                p.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                p.style.setProperty('--rot', `${-180 + Math.random() * 360}deg`);
+                
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 1000);
             }
         }
 
-        function updateDraftUIForUser() {
-            const overlay = document.getElementById('draft-overlay');
-            const title = document.getElementById('draft-title');
-            const cardsArea = document.getElementById('draft-cards-area');
-            const instructions = document.getElementById('draft-instructions');
-            const options = document.getElementById('draft-options');
-            
-            title.textContent = "Draft Failed Combo";
-            cardsArea.innerHTML = '';
-            draftState.cards.forEach(card => {
-                const cardEl = createCardElem(card, true);
-                cardEl.onclick = () => handleDraftPick(card);
-                cardsArea.appendChild(cardEl);
-            });
-            overlay.classList.remove('hidden');
-            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-
-            const isFirstPicker = draftState.currentPickerIndex === 0;
-            if (isFirstPicker && draftState.wasLeadAttempt) {
-                options.innerHTML = `
-                    <button id="draft-take-btn" class="${draftState.draftMode === 'take' ? 'active' : ''}">Take a Card</button>
-                    <button id="draft-discard-btn" class="${draftState.draftMode === 'discard' ? 'active' : ''}">Discard a Card</button>
-                `;
-                document.getElementById('draft-take-btn').onclick = () => { draftState.draftMode = 'take'; updateDraftUIForUser(); };
-                document.getElementById('draft-discard-btn').onclick = () => { draftState.draftMode = 'discard'; updateDraftUIForUser(); };
-            } else {
-                draftState.draftMode = 'take';
-                options.innerHTML = '';
-            }
-
-            instructions.textContent = `It's your turn. ${draftState.draftMode === 'take' ? 'Choose a card to take.' : 'Choose a card to discard.'}`;
-        }
-
-        function updateDraftUIForAI(picker) {
-             const overlay = document.getElementById('draft-overlay');
-             const title = document.getElementById('draft-title');
-             const cardsArea = document.getElementById('draft-cards-area');
-             const instructions = document.getElementById('draft-instructions');
-             const options = document.getElementById('draft-options');
-             options.innerHTML = '';
-             title.textContent = "Draft Failed Combo";
-             cardsArea.innerHTML = '';
-             draftState.cards.forEach(card => cardsArea.appendChild(createCardElem(card, true)));
-             overlay.classList.remove('hidden');
-             setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-             instructions.textContent = `${picker.name} is choosing a card...`;
-        }
-
-        function handleDraftPick(pickedCard) {
-            if (!draftState) return;
-            const currentPickerRole = draftState.pickOrder[draftState.currentPickerIndex];
-            const currentPicker = draftState[currentPickerRole];
-            
-            pickedCard.selected = false;
-            let isGameOver = false;
-
-            if (draftState.draftMode === 'take') {
-                 currentPicker.hand.push(pickedCard);
-                 currentPicker.hand.sort((a,b) => a.value - b.value);
-                 addLog(`<strong>${currentPicker.name}</strong> drafted a ${formatCardsForLog([pickedCard])}`);
-                 updateSharedKnowledge(currentPicker.id, pickedCard);
-
-            } else {
-                 addLog(`<strong>${currentPicker.name}</strong> discarded a ${formatCardsForLog([pickedCard])}`);
-                 if (currentPicker.hand.length === 0) {
-                     isGameOver = checkForWin();
-                 }
-            }
-
-            draftState.cards = draftState.cards.filter(c => c.id !== pickedCard.id);
-            draftState.currentPickerIndex++;
-
-            if (isGameOver) {
-                const overlay = document.getElementById('draft-overlay');
-                overlay.classList.add('opacity-0');
-                setTimeout(() => overlay.classList.add('hidden'), 500);
-            } else {
-                renderAll();
-                processNextDraftPick();
-            }
-        }
-        
-        function updateSharedKnowledge(playerId, card) {
-            if (!sharedKnowledge[playerId]) sharedKnowledge[playerId] = {};
-            sharedKnowledge[playerId][card.rank] = (sharedKnowledge[playerId][card.rank] || 0) + 1;
-
-            const partnerId = getPartner(playerId).id;
-             if (!sharedKnowledge[partnerId]) sharedKnowledge[partnerId] = {};
-            sharedKnowledge[partnerId][card.rank] = (sharedKnowledge[partnerId][card.rank] || 0) + 1;
-        }
-
-
-        function endInteractiveDraft() {
-            if (checkForWin()) return;
-            const onComplete = draftState.onComplete;
-            draftState = null;
-            const overlay = document.getElementById('draft-overlay');
-            overlay.classList.add('opacity-0');
-            setTimeout(() => overlay.classList.add('hidden'), 500);
-            if (onComplete) onComplete();
-        }
-
-        function hasStrategicPlayFailedBefore(initiatorId, cards, failedPlays) {
-            const playSignature = cards.map(c => c.rank).sort().join(',');
-            return failedPlays.some(fail => {
-                const failedPlaySignature = fail.cards.map(c => c.rank).sort().join(',');
-                return fail.initiatorId === initiatorId && failedPlaySignature === playSignature;
-            });
-        }
-        
-        function executeAiTurn() {
-            setTimeout(() => {
-                const player = players[currentTurn];
-                const aiHand = player.hand;
-                const partner = getPartner(player.id);
-
-                if (pendingPlay.initiatorId !== null && partner.id === pendingPlay.initiatorId) {
-                    const possibleCompletions = findAllValidCompletions(pendingPlay.cards, aiHand, lastValidPlay);
-                    if (possibleCompletions.length > 0) {
-                        possibleCompletions.sort((a, b) => a.rankValue - b.rankValue);
-                        const bestCompletion = possibleCompletions[0];
-                        player.hand = aiHand.filter(c => !bestCompletion.contributingCards.some(cc => cc.id === c.id));
-                        const fullCombo = bestCompletion.cards;
-                        const playDetails = getPlayType(fullCombo);
-                        addLog(`<strong>${player.name}</strong> completes with ${formatCardsForLog([...bestCompletion.contributingCards].sort((a,b) => a.value - b.value))} to make a ${formatPlayTypeForDisplay(playDetails.type)}: ${formatCardsForLog([...fullCombo].sort((a,b) => a.value - b.value))}`);
-                        animateAndPlayCards(player, bestCompletion.contributingCards, fullCombo, playDetails, () => {
-                            if (checkForWin()) return;
-                            currentTurn = (partner.id + 1) % 4;
-                            renderAll();
-                            if(!players[currentTurn].isHuman) executeAiTurn();
-                        });
-                    } else handlePass();
-                    return;
-                }
-                
-                const isLeadingTrick = lastValidPlay.type === 'none' && currentTurn === trickWinnerId;
-                
-                const teamIsInEndGame = player.hand.length <= 4 || partner.hand.length <= 4;
-
-                if (!isLeadingTrick) {
-                    const opponentTeam = player.team === 0 ? 1 : 0;
-                    let opponentIsAboutToWin = false;
-                    for (const p of players) {
-                        if (p.team === opponentTeam && p.hand.length === 1) {
-                            opponentIsAboutToWin = true;
-                            break;
-                        }
-                    }
-                    if (opponentIsAboutToWin) {
-                        addLog(`<strong>${player.name}</strong> passes defensively.`);
-                        handlePass();
-                        return;
-                    }
-                }
-
-                if (isLeadingTrick) {
-                    const ranksInHand = aiHand.reduce((acc, card) => { acc[card.rank] = (acc[card.rank] || 0) + 1; return acc; }, {});
-                    for(const rank in ranksInHand) {
-                        if (ranksInHand[rank] >= 4) {
-                             const cardsToPlay = aiHand.filter(c => c.rank === rank).slice(0, 3);
-                             if (!hasStrategicPlayFailedBefore(player.id, cardsToPlay, failedPlays)) {
-                                 pendingPlay = { initiatorId: player.id, cards: cardsToPlay };
-                                 player.hand = aiHand.filter(c => !cardsToPlay.some(played => played.id === c.id));
-                                 addLog(`<strong>${player.name}</strong> (strategically) initiates with: ${formatCardsForLog(cardsToPlay)}`);
-                                 nextTurn(true);
-                                 return;
-                             }
-                        }
-                    }
-                }
-
-                let possibleInitiations = [];
-                for (let i = 1; i <= Math.min(aiHand.length, 3); i++) {
-                    const getCombinations = (arr, size) => {
-                        function* F(offset, combo) {
-                            if (combo.length === size) { yield combo; return; }
-                            for (let j = offset; j < arr.length; j++) yield* F(j + 1, combo.concat(arr[j]));
-                        }
-                        return Array.from(F(0, []));
-                    };
-                    possibleInitiations.push(...getCombinations(aiHand, i));
-                }
-                
-                let validInitiations = possibleInitiations.filter(combo => {
-                    if (combo.length === 1) return true;
-                    const sortedValues = combo.map(c => c.value).sort((a, b) => a - b);
-                    const uniqueValues = [...new Set(sortedValues)];
-                    const areSameRank = uniqueValues.length === 1;
-                    const arePotentialRun = uniqueValues.length === sortedValues.length && (sortedValues[sortedValues.length - 1] - sortedValues[0] < 4);
-                    const arePotentialStairs = uniqueValues.length === 2 && Math.abs(uniqueValues[0] - uniqueValues[1]) === 1;
-                    return areSameRank || arePotentialRun || arePotentialStairs;
-                });
-                
-                if (!isLeadingTrick) {
-                    if (lastValidPlay.type === 'bomb') {
-                        validInitiations = validInitiations.filter(combo => {
-                            const isPotentialBomb = combo.every(c => c.rank === combo[0].rank);
-                            if (!isPotentialBomb) return false;
-                            return combo[0].value > lastValidPlay.rankValue;
-                        });
-                    } else {
-                        validInitiations = validInitiations.filter(combo => {
-                            return canInitiationBecomeComboType(combo, lastValidPlay.type);
-                        });
-
-                        validInitiations = validInitiations.filter(combo => {
-                            const highestCardInInitiation = combo.sort((a,b)=>b.value-a.value)[0];
-                            if (highestCardInInitiation.value <= lastValidPlay.rankValue) {
-                                const isPotentialBomb = combo.every(c => c.rank === combo[0].rank);
-                                if (!isPotentialBomb) return false;
-                            }
-                            return true;
-                        });
-                    }
-                }
-                
-                validInitiations = validInitiations.filter(combo => !hasStrategicPlayFailedBefore(player.id, combo, failedPlays));
-                
-                validInitiations = validInitiations.filter(combo => {
-                    const isPotentialBomb = combo.every(c => c.rank === combo[0].rank);
-                    if (isPotentialBomb) {
-                        const visibleCardsOfRank = playPile.filter(c => c.rank === combo[0].rank).length;
-                        if (visibleCardsOfRank + combo.length >= 4) return false; 
-                    }
-                    return true;
-                });
-
-                if (validInitiations.length > 0) {
-                     validInitiations.sort((a, b) => {
-                        if (isLeadingTrick || teamIsInEndGame) {
-                            if (a.length !== b.length) return a.length - b.length;
-                            const aValue = a.sort((c1,c2) => c1.value - c2.value)[0].value;
-                            const bValue = b.sort((c1,c2) => c1.value - c2.value)[0].value;
-                            return aValue - bValue;
-                        } else {
-                            const aIsBomb = a.every(c=>c.rank === a[0].rank);
-                            const bIsBomb = b.every(c=>c.rank === b[0].rank);
-                            if (aIsBomb && !bIsBomb) return -1;
-                            if (!aIsBomb && bIsBomb) return 1;
-
-                            if (a.length !== b.length) return b.length - a.length;
-                            
-                            const aValue = a.sort((c1,c2) => c1.value - c2.value)[0].value;
-                            const bValue = b.sort((c1,c2) => c1.value - c2.value)[0].value;
-                            return aValue - bValue;
-                        }
-                    });
-                    const bestInitiation = validInitiations[0];
-                    
-                    pendingPlay = { initiatorId: player.id, cards: bestInitiation };
-                    player.hand = aiHand.filter(c => !bestInitiation.some(bc => bc.id === c.id));
-                    addLog(`<strong>${player.name}</strong> initiates with: ${formatCardsForLog([...bestInitiation].sort((a,b) => a.value - b.value))}`);
-                    nextTurn(true);
-                }
-                else if(isLeadingTrick && aiHand.length > 0) {
-                    const lowestCard = aiHand[0];
-                    pendingPlay = { initiatorId: player.id, cards: [lowestCard] };
-                    player.hand.splice(0, 1);
-                    addLog(`<strong>${player.name}</strong> initiates with: ${formatCardsForLog([lowestCard])}`);
-                    nextTurn(true);
-                } else {
-                     handlePass();
-                }
-            }, 1000);
-        }
-
-        // --- Rendering ---
-        function createCardElem(card, isFaceUp = false) {
-            const cardDiv = document.createElement('div');
-            cardDiv.dataset.cardId = card.id;
-            if (isFaceUp) {
-                cardDiv.className = 'card';
-                cardDiv.style.backgroundColor = CARD_COLORS[card.rank] || '#FFFFFF';
-                cardDiv.style.color = '#1f2937';
-                const centerRank = document.createElement('div');
-                centerRank.className = 'center-rank';
-                centerRank.textContent = card.rank;
-                const topLeftRank = document.createElement('div');
-                topLeftRank.className = 'corner-rank top-left';
-                topLeftRank.textContent = card.rank;
-                const bottomRightRank = document.createElement('div');
-                bottomRightRank.className = 'corner-rank bottom-right';
-                bottomRightRank.textContent = card.rank;
-                cardDiv.appendChild(topLeftRank);
-                cardDiv.appendChild(centerRank);
-                cardDiv.appendChild(bottomRightRank);
-                cardDiv.onclick = () => {
-                    if (players[currentTurn]?.isHuman && !draftState) {
-                        card.selected = !card.selected;
-                        cardDiv.classList.toggle('selected', card.selected);
-                    }
-                };
-            } else {
-                cardDiv.className = 'card card-back';
-            }
-            return cardDiv;
-        }
-        
         function renderAll() {
-             scoreDisplay.textContent = `Score: N/S ${teamScores[0]} - E/W ${teamScores[1]} (Win ${GAMES_TO_WIN} Games)`;
-             players.forEach(p => {
-                const handElem = document.getElementById(`${p.name.toLowerCase()}-hand`);
-                const infoElem = document.getElementById(`${p.name.toLowerCase()}-info`);
-                const countElem = document.getElementById(`${p.name.toLowerCase()}-card-count`);
-                handElem.innerHTML = '';
-                p.hand.forEach(card => {
-                    let cardEl;
-                    if (p.isHuman) {
-                        cardEl = createCardElem(card, true);
-                        cardEl.classList.toggle('selected', !!card.selected);
-                    } else {
-                        cardEl = createCardElem(card, false);
-                    }
-                    handElem.appendChild(cardEl);
-                });
-                countElem.textContent = `(${p.hand.length} cards)`;
-                infoElem.classList.toggle('active-turn', p.id === currentTurn);
-             });
-             
-             document.querySelectorAll('.play-slot').forEach(slot => {
-                 slot.innerHTML = '';
-                 slot.classList.remove('active-combo');
-             });
+            renderPlayerHand(); renderOpponentHand(); renderSharedBoard(); renderDrawPile(); renderTrickAreas();
+            scoreDisplayElem.textContent = `PLAYER: ${playerScore} • COMPUTER: ${computerScore}`;
+            renderPlayLog(); updateContextualControls();
+        }
 
-             if (playPile.length > 0) { 
-                 const owner = players[trickWinnerId];
-                 const previousPlaySlot = document.getElementById(`${owner.name.toLowerCase()}-play-slot`);
-                 if (previousPlaySlot) {
-                     previousPlaySlot.classList.add('active-combo');
-                     const sortedPlayPile = [...playPile].sort((a, b) => a.value - b.value);
-                     sortedPlayPile.forEach(card => previousPlaySlot.appendChild(createCardElem(card, true)));
-                 }
-             }
+        function updateContextualControls() {
+            sharedBoardElem.classList.remove('selectable-zone');
+            if (currentPlayer !== 'player') { disableControls(); return; }
 
-             if (pendingPlay.cards.length > 0) {
-                 const initiator = players[pendingPlay.initiatorId];
-                 const pendingSlot = document.getElementById(`${initiator.name.toLowerCase()}-play-slot`);
-                 if (pendingSlot) {
-                    const sortedPendingPile = [...pendingPlay.cards].sort((a, b) => a.value - b.value);
-                    sortedPendingPile.forEach(card => pendingSlot.appendChild(createCardElem(card, true)));
-                 }
-             }
+            playBtn.disabled = false;
+            passBtn.disabled = false;
 
+            if (isPassing) { 
+                passBtn.textContent = 'Skip Draft'; 
+                if (sharedBoard.length > 0) sharedBoardElem.classList.add('selectable-zone'); 
+                playBtn.disabled = true; 
+                return; 
+            }
 
-             const lastPlayInfoElem = document.getElementById('last-play-info');
-             if (lastValidPlay.type !== 'none') {
-                 lastPlayInfoElem.textContent = `Current Play: ${formatPlayTypeForDisplay(lastValidPlay.type)}`;
-             } else if (pendingPlay.initiatorId !== null) {
-                const initiatorName = players[pendingPlay.initiatorId].name;
-                const completerName = getPartner(pendingPlay.initiatorId).name;
-                lastPlayInfoElem.textContent = `${completerName} to complete ${initiatorName}'s play...`;
-             } else {
-                lastPlayInfoElem.textContent = 'Play any card to start the trick.';
-             }
-             
-             const isMyTurn = players[currentTurn]?.isHuman;
-             const mustLead = lastValidPlay.type === 'none' && currentTurn === trickWinnerId;
-             
-             playBtn.disabled = !isMyTurn;
-             passBtn.disabled = !isMyTurn || mustLead;
+            const boardIsEmpty = (sharedBoard.length === 0);
+            
+            if (!lastPlayedCombo) {
+                const canPlayCombo = checkValidCombinationsExist(playerHand, sharedBoard);
+                if (boardIsEmpty || (!canPlayCombo && !isSinglesMode)) {
+                    passBtn.textContent = 'Initiate Singles';
+                } else {
+                    passBtn.textContent = 'Pass';
+                    passBtn.disabled = isSinglesMode;
+                }
+            } else { 
+                passBtn.textContent = 'Concede/Pass'; 
+            }
+        }
+
+        function animateCardMovement(startElement, destinationElement, cardData = null) {
+            if (!startElement || !destinationElement) return;
+            const clone = cardData ? createCardElement(cardData) : startElement.cloneNode(true);
+            const startRect = startElement.getBoundingClientRect(); const destRect = destinationElement.getBoundingClientRect();
+            clone.classList.add('card-fly'); clone.style.left = `${startRect.left}px`; clone.style.top = `${startRect.top}px`;
+            document.body.appendChild(clone);
+            
+            if (startElement && startElement !== opponentHandElem) startElement.style.opacity = '0';
+            
+            requestAnimationFrame(() => {
+                const deltaX = destRect.left + (destRect.width / 2) - (startRect.width / 2); const deltaY = destRect.top + (destRect.height / 2) - (startRect.height / 2);
+                clone.style.transform = `translate(${deltaX - startRect.left}px, ${deltaY - startRect.top}px) scale(0.5)`; clone.style.opacity = '0.3';
+            });
+            setTimeout(() => clone.remove(), 500);
+        }
+
+        function renderPlayLog() {
+            playLogContentElem.innerHTML = playLog.map(entry => {
+                if (entry.type === 'notice') {
+                    return `<div class="log-entry-wrapper"><div class="log-bubble log-notice"><strong>${entry.message}</strong></div></div>`;
+                }
+                const cardHTML = [...entry.cards].sort((a,b)=>a.value-b.value).map(c => `<div class="mini-card ${c.fromBoard ? 'board-origin' : ''}" data-value="${c.value}">${c.value}</div>`).join('');
+                let bClass = entry.message.includes('Rival') ? 'log-computer' : (entry.message.includes('You') ? 'log-player' : 'log-system');
+                return `<div class="log-entry-wrapper"><div class="log-bubble ${bClass}"><strong>${entry.message}</strong> ${cardHTML}</div></div>`;
+            }).join('');
+            playLogContentElem.scrollTop = playLogContentElem.scrollHeight;
+        }
+        function addToLog(message, cards = []) { playLog.push({ message, cards }); renderPlayLog(); }
+        
+        function renderPlayerHand() {
+            playerHandElem.innerHTML = ''; 
+            playerHand.forEach((card, idx) => {
+                const cardEl = createCardElement(card, 'hand');
+                cardEl.style.zIndex = idx + 1;
+                playerHandElem.appendChild(cardEl);
+            });
+            playerCardCountElem.textContent = `(${playerHand.length} Cards)`;
         }
         
-        function showMessage(title, text, options = {}) {
-            const { buttonText = 'Close', onButtonClick = null, autoClose = true } = options;
-            const msgBox = document.getElementById('message-box');
-            const msgBtn = document.getElementById('message-btn');
-            document.getElementById('message-title').textContent = title;
-            document.getElementById('message-text').textContent = text;
-            msgBtn.textContent = buttonText;
-            msgBox.classList.remove('hidden');
-            setTimeout(() => msgBox.classList.remove('opacity-0', '-translate-y-10'), 10);
-            const closeAction = () => {
-                msgBox.classList.add('opacity-0', '-translate-y-10');
-                setTimeout(() => {
-                    msgBox.classList.add('hidden');
-                    if (onButtonClick) onButtonClick();
-                }, 500);
-            };
-            msgBtn.onclick = closeAction;
-            if (autoClose && !onButtonClick) setTimeout(closeAction, 3000);
-        }
-        
-        function addLog(message) {
-            gameLog.push(message);
-            if (gameLog.length > 50) gameLog.shift();
-            renderLog();
-        }
-
-        function formatCardsForLog(cards) {
-            if (!cards || cards.length === 0) return '';
-            return cards.map(card => `
-                <span class="log-card-icon" style="background-color: ${CARD_COLORS[card.rank] || '#FFF'};">
-                    ${card.rank}
-                </span>
-            `).join('');
-        }
-
-        function renderCombosHelper() {
-            const contentEl = document.getElementById('combos-content');
-            const combos = [
-                { name: 'Pair', desc: 'Two cards of the same number.', example: [{rank:'2'},{rank:'2'}] },
-                { name: 'Triple', desc: 'Three cards of the same number.', example: [{rank:'4'},{rank:'4'},{rank:'4'}] },
-                { name: 'Run of 2', desc: 'Two cards in consecutive order.', example: [{rank:'5'},{rank:'6'}] },
-                { name: 'Run of 3', desc: 'Three cards in consecutive order.', example: [{rank:'1'},{rank:'2'},{rank:'3'}] },
-                { name: 'Run of 4', desc: 'Four cards in consecutive order.', example: [{rank:'6'},{rank:'7'},{rank:'8'},{rank:'9'}]},
-                { name: 'Stairs', desc: 'Two consecutive pairs.', example: [{rank:'7'},{rank:'7'},{rank:'8'},{rank:'8'}] },
-                { name: 'Bomb', desc: 'Four cards of the same number. Beats any other combo.', example: [{rank:'9'},{rank:'9'},{rank:'9'},{rank:'9'}] }
-            ];
-
-            let html = combos.map(combo => `
-                <div class="helper-item">
-                    <strong>${combo.name}</strong>
-                    <span>${combo.desc}</span>
-                    <div class="helper-example">Example: ${formatCardsForLog(combo.example)}</div>
-                </div>
-            `).join('');
-
-            html += `
-                <div class="helper-item">
-                    <strong>Draft Rules</strong>
-                    <ul class="list-disc list-inside text-xs pl-2">
-                        <li><strong>When a LEAD fails:</strong> Initiator can take OR discard first card.</li>
-                        <li><strong>When a FOLLOW fails:</strong> All players must take cards.</li>
-                        <li><strong>Pick Order:</strong> Initiator -> Partner -> Initiator (if 3 cards).</li>
-                    </ul>
-                </div>
-            `;
-            contentEl.innerHTML = html;
-        }
-
-        function renderLog() {
-            const logContent = document.getElementById('log-content');
-            if (logContent) {
-                logContent.innerHTML = gameLog.map(msg => `<div class="log-message">${msg}</div>`).join('');
-                logContent.scrollTop = logContent.scrollHeight;
+        function renderOpponentHand() {
+            opponentHandElem.innerHTML = ''; 
+            opponentHandElem.style.opacity = '1';
+            opponentCardCountElem.textContent = `(${computerHand.length} Cards)`;
+            for(let i = 0; i < computerHand.length; i++) { 
+                const back = document.createElement('div'); 
+                back.className = 'card-back'; 
+                back.style.zIndex = i + 1;
+                opponentHandElem.appendChild(back); 
             }
         }
         
-        playBtn.addEventListener('click', handlePlay);
-        passBtn.addEventListener('click', handlePass);
+        function renderSharedBoard() { sharedBoardElem.innerHTML = ''; sharedBoard.forEach(card => sharedBoardElem.appendChild(createCardElement(card, 'board'))); }
+        function renderDrawPile() {
+            drawPileElem.innerHTML = '';
+            if (drawDeck.length > 0) { const back = document.createElement('div'); back.className = 'card-back'; back.innerHTML = `<div class="draw-pile-count">${drawDeck.length} LEFT</div>`; drawPileElem.appendChild(back); }
+            else { drawPileElem.innerHTML = `<div class="text-xs font-bold text-slate-600">DEPLETED</div>`; }
+        }
+        function renderTrickAreas() {
+            playerTrickAreaElem.innerHTML = ''; playerTrickPlay.slice().sort((a,b)=>a.value-b.value).forEach(c => playerTrickAreaElem.appendChild(createCardElement(c)));
+            computerTrickAreaElem.innerHTML = ''; computerTrickPlay.slice().sort((a,b)=>a.value-b.value).forEach(c => computerTrickAreaElem.appendChild(createCardElement(c)));
+        }
+
+        /* Stripped of fallback rendering completely—images are on their own now. */
+        function createCardElement(card, mode = 'view') {
+            const div = document.createElement('div'); 
+            div.className = 'card'; 
+            div.dataset.value = card.value; 
+            div.dataset.id = card.id;
+
+            if (mode === 'hand' && selectedHandCards.some(c => c.id === card.id)) div.classList.add('selected');
+            if (mode === 'board' && selectedBoardCards.some(c => c.id === card.id)) div.classList.add('selected');
+            
+            div.addEventListener('click', () => {
+                if (currentPlayer !== 'player') return;
+                if (isPassing) { if (mode === 'board') draftPassedCard(card); return; }
+                if (mode === 'hand') {
+                    const idx = selectedHandCards.findIndex(c => c.id === card.id);
+                    if (idx > -1) selectedHandCards.splice(idx, 1); else if (selectedHandCards.length < 4) selectedHandCards.push(card);
+                } else if (mode === 'board') {
+                    const idx = selectedBoardCards.findIndex(c => c.id === card.id);
+                    if (idx > -1) selectedBoardCards.splice(idx, 1); else if (selectedBoardCards.length < 4) selectedBoardCards.push(card);
+                }
+                renderAll();
+            });
+            return div;
+        }
+        function updateStatus(msg) { statusText.textContent = msg; }
+
+        function draftPassedCard(card) {
+            isPassing = false;
+            triggerConcessionNotice(`You conceded the trick and drafted card [${card.value}] from the board.`, false);
+            animateCardMovement(document.querySelector(`#shared-board .card[data-id='${card.id}']`), playerHandElem);
+            playerHand.push(card); playerHand.sort((a,b) => a.value - b.value);
+            sharedBoard = sharedBoard.filter(c => c.id !== card.id);
+            setTimeout(() => {
+                if (drawDeck.length > 0) sharedBoard.push(drawDeck.pop());
+                cleanTrickArena();
+                currentPlayer = 'computer'; 
+                renderAll();
+                updateStatus("Rival preparing new lead strategy...");
+                setTimeout(computerTurn, 1200);
+            }, 600);
+        }
+
+        function cleanTrickArena() { lastPlayedCombo = null; playerTrickPlay = []; computerTrickPlay = []; isSinglesMode = false; }
+
+        function evaluateMeldStructure(cards) {
+            if (!cards.length) return { type: 'invalid' };
+            const sorted = cards.map(c => c.value).sort((a,b) => a - b); const len = sorted.length;
+            if (len === 1) return { type: 'Single', value: sorted[0], cards };
+            if (sorted.every(v => v === sorted[0])) {
+                if (len === 2) return { type: 'Pair', value: sorted[0], cards };
+                if (len === 3) return { type: 'Triple', value: sorted[0], cards };
+                if (len === 4) return { type: 'Bomb', value: sorted[0], cards };
+            }
+            if (len === 4 && sorted[0] === sorted[1] && sorted[2] === sorted[3] && sorted[2] === sorted[0] + 1) return { type: 'Stairs', value: sorted[3], cards };
+            if (len >= 2 && len <= 4 && sorted.every((v, i) => i === 0 || v === sorted[i-1] + 1)) return { type: `${len}-Run`, value: sorted[len-1], cards };
+            return { type: 'invalid', cards };
+        }
+
+        function verifyMeldLegality(attempt, currentActive, handCount, boardCount) {
+            if (attempt.type === 'invalid') return "Invalid meld structural layout.";
+            if (attempt.type === 'Bomb') {
+                if (sharedBoard.length > 0 && (handCount === 0 || boardCount === 0)) return "Love Bombs require components from both systems.";
+                if (currentActive && currentActive.type === 'Bomb' && attempt.value <= currentActive.value) return `Rival Bomb rank is dominant. Must surpass ${currentActive.value}.`;
+                return null;
+            }
+            if (isSinglesMode) {
+                if (attempt.type !== 'Single') return "Singles constraint active. Match rank or detonate Love Bomb.";
+                if (handCount + boardCount !== 1) return "Select exactly 1 card.";
+                if (currentActive && attempt.value <= currentActive.value) return `Rank too low. Must surpass ${currentActive.value}.`;
+                return null;
+            }
+            
+            if (sharedBoard.length === 0) {
+                if (attempt.type !== 'Single') return "Board depleted. Lead requires single card play format.";
+                return null;
+            }
+
+            if (handCount === 0 || boardCount === 0) return "Melds must link both hand cards and shared board cards.";
+            if (!currentActive) { if (attempt.type === 'Single') return "Opening lead requires complex combo composition."; return null; }
+            if (currentActive.type === 'Bomb') return "Love Bomb detonation active. Counter-bomb required.";
+            if (attempt.type !== currentActive.type) return `Meld shape mismatch. Expected matching ${currentActive.type}.`;
+            if (attempt.value <= currentActive.value) return `Insufficient rank power. Must beat value ${currentActive.value}.`;
+            return null;
+        }
+
+        function playTurn() {
+            if (currentPlayer !== 'player' || isPassing) return;
+            const compiled = [...selectedHandCards, ...selectedBoardCards.map(c => ({...c, fromBoard: true}))];
+            if (!compiled.length) { updateStatus("No cards prepared for play."); return; }
+            const attemptMeld = evaluateMeldStructure(compiled);
+            const failureReason = verifyMeldLegality(attemptMeld, lastPlayedCombo, selectedHandCards.length, selectedBoardCards.length);
+            if (failureReason) { updateStatus(failureReason); return; }
+            
+            selectedHandCards.forEach(c => animateCardMovement(document.querySelector(`#player-hand .card[data-id='${c.id}']`), playerTrickAreaElem));
+            selectedBoardCards.forEach(c => animateCardMovement(document.querySelector(`#shared-board .card[data-id='${c.id}']`), playerTrickAreaElem));
+            setTimeout(() => {
+                addToLog("You introduced a " + attemptMeld.type, attemptMeld.cards);
+                
+                if (attemptMeld.type === 'Bomb') { 
+                    detonateLoveBombVFX(); 
+                    if (attemptMeld.value === 9) { launchFlyingBoxArt(); }
+                }
+                
+                playerHand = playerHand.filter(c => !selectedHandCards.some(s => s.id === c.id));
+                sharedBoard = sharedBoard.filter(c => !selectedBoardCards.some(s => s.id === c.id));
+                for (let i = 0; i < selectedBoardCards.length; i++) { if (drawDeck.length > 0) sharedBoard.push(drawDeck.pop()); }
+                lastPlayedCombo = attemptMeld; playerTrickPlay = attemptMeld.cards;
+                selectedHandCards = []; selectedBoardCards = [];
+                if (playerHand.length === 0) { roundTermination('player'); return; }
+                switchTurn();
+            }, 550);
+        }
+
+        function switchTurn() {
+            currentPlayer = currentPlayer === 'player' ? 'computer' : 'player';
+            if (lastPlayedCombo) { isSinglesMode = (lastPlayedCombo.type === 'Single'); }
+            if (sharedBoard.length === 0 && !lastPlayedCombo) { isSinglesMode = true; }
+            
+            renderAll();
+            if (currentPlayer === 'computer') { disableControls(); updateStatus("Rival analyzing structural weaknesses..."); setTimeout(computerTurn, 1200); }
+            else { updateStatus(!lastPlayedCombo ? (sharedBoard.length === 0 ? "Board depleted! Play a single to lead." : "Your lead!") : "Your opportunity to counter."); }
+        }
+
+        function passTurn() {
+            if (currentPlayer !== 'player') return;
+            
+            if (isPassing || passBtn.textContent === 'Skip Draft') {
+                triggerConcessionNotice(`You skipped the draft phase.`, false); 
+                isPassing = false; 
+                cleanTrickArena();
+                currentPlayer = 'computer'; 
+                renderAll(); 
+                updateStatus("Rival preparing new lead strategy..."); 
+                setTimeout(computerTurn, 1200);
+                return;
+            }
+            
+            if (isSinglesMode || lastPlayedCombo) {
+                if (sharedBoard.length === 0) {
+                    triggerConcessionNotice(`You passed (No card to draft).`, false); 
+                    cleanTrickArena();
+                    currentPlayer = 'computer'; 
+                    renderAll(); 
+                    updateStatus("Rival preparing new lead strategy..."); 
+                    setTimeout(computerTurn, 1200);
+                    return;
+                }
+                isPassing = true; 
+                selectedHandCards = []; 
+                selectedBoardCards = [];
+                updateStatus("Concession acknowledged. Select one card from Board to claim, or skip."); 
+                renderAll(); 
+                return;
+            }
+            
+            if (passBtn.textContent === 'Initiate Singles') { 
+                isSinglesMode = true; 
+                cleanTrickArena(); 
+                addToLog(`You altered posture to Singles Mode.`); 
+                renderAll();
+                updateStatus("Singles Mode active. Select and play your single card lead.");
+            }
+        }
+
+        function computerTurn() {
+            if (sharedBoard.length === 0 && !lastPlayedCombo) { isSinglesMode = true; }
+            if (isSinglesMode) { executeComputerSinglesLogic(); return; }
+            
+            let selection = findOptimalComputerMove(); if (selection) { deployComputerMeld(selection); return; }
+            let nuclearOption = findComputerLoveBomb(); if (nuclearOption) { deployComputerMeld(nuclearOption); return; }
+            if (!lastPlayedCombo) { isSinglesMode = true; addToLog(`Rival initiated Singles Protocol.`); executeComputerSinglesLogic(); return; }
+            executeComputerConcession();
+        }
+
+        function deployComputerMeld(move) {
+            move.handCards.forEach(c => animateCardMovement(opponentHandElem, computerTrickAreaElem, c));
+            move.boardCards.forEach(c => animateCardMovement(document.querySelector(`#shared-board .card[data-id='${c.id}']`), computerTrickAreaElem));
+            setTimeout(() => {
+                const combined = [...move.handCards, ...move.boardCards.map(c => ({...c, fromBoard: true}))];
+                addToLog("Rival deployed " + move.meld.type, combined);
+                
+                if (move.meld.type === 'Bomb') { 
+                    detonateLoveBombVFX(); 
+                    if (move.meld.value === 9) { launchFlyingBoxArt(); }
+                }
+                
+                computerHand = computerHand.filter(c => !move.handCards.some(s => s.id === c.id));
+                sharedBoard = sharedBoard.filter(c => !move.boardCards.some(s => s.id === c.id));
+                for (let i = 0; i < move.boardCards.length; i++) { if (drawDeck.length > 0) sharedBoard.push(drawDeck.pop()); }
+                lastPlayedCombo = move.meld; computerTrickPlay = move.meld.cards;
+                if (computerHand.length === 0) { roundTermination('computer'); return; }
+                switchTurn();
+            }, 550);
+        }
+
+        function executeComputerSinglesLogic() {
+            const choices = [...computerHand.map(c => ({...c, loc: 'hand'})), ...sharedBoard.map(c => ({...c, loc: 'board'}))].filter(c => !lastPlayedCombo || c.value > lastPlayedCombo.value);
+            if (choices.length > 0) {
+                choices.sort((a,b) => a.value - b.value); let picked = choices[0];
+                const node = picked.loc === 'board' ? document.querySelector(`#shared-board .card[data-id='${picked.id}']`) : opponentHandElem;
+                animateCardMovement(node, computerTrickAreaElem, picked);
+                setTimeout(() => {
+                    addToLog(`Rival played Single`, [picked.loc === 'board' ? {...picked, fromBoard: true} : picked]);
+                    if (picked.loc === 'hand') { computerHand = computerHand.filter(c => c.id !== picked.id); }
+                    else { sharedBoard = sharedBoard.filter(c => c.id !== picked.id); if (drawDeck.length > 0) sharedBoard.push(drawDeck.pop()); }
+                    lastPlayedCombo = { type: 'Single', value: picked.value, cards: [picked] }; computerTrickPlay = [picked];
+                    if (computerHand.length === 0) { roundTermination('computer'); return; }
+                    switchTurn();
+                }, 550);
+            } else {
+                let nuclearOption = findComputerLoveBomb(); if (nuclearOption) { deployComputerMeld(nuclearOption); return; }
+                executeComputerConcession();
+            }
+        }
+
+        function executeComputerConcession() {
+            let targetCard = null;
+            if (sharedBoard.length > 0) {
+                const tallies = {}; computerHand.forEach(c => tallies[c.value] = (tallies[c.value] || 0) + 1);
+                let profiles = [...sharedBoard].sort((a,b) => (tallies[b.value] || 0) - (tallies[a.value] || 0)); targetCard = profiles[0];
+            }
+            if (targetCard) { animateCardMovement(document.querySelector(`#shared-board .card[data-id='${targetCard.id}']`), opponentHandElem); }
+            
+            setTimeout(() => {
+                let statusMsg = "";
+                if (targetCard) {
+                    statusMsg = `Conceded! Drafted [${targetCard.value}] from board.`;
+                    triggerConcessionNotice(`Rival conceded the trick and drafted card [${targetCard.value}] from the board.`, false);
+                    computerHand.push(targetCard); computerHand.sort((a,b)=>a.value-b.value);
+                    sharedBoard = sharedBoard.filter(c => c.id !== targetCard.id); if (drawDeck.length > 0) sharedBoard.push(drawDeck.pop());
+                } else { 
+                    statusMsg = `Passed the trick entirely.`;
+                    triggerConcessionNotice(`Rival passed the trick entirely.`, false);
+                }
+                cleanTrickArena();
+                currentPlayer = 'player'; 
+                renderAll();
+                updateStatus(sharedBoard.length === 0 ? "Board empty! Play a single from your hand to lead." : "Your lead!");
+                
+                flashRivalTickerMessage(statusMsg);
+            }, 600);
+        }
+
+        function findOptimalComputerMove() {
+            if (sharedBoard.length === 0) return null;
+            const options = []; const hSub = getPowerset(computerHand, 4); const bSub = getPowerset(sharedBoard, 3);
+            for (const h of hSub) {
+                if (!h.length) continue;
+                for (const b of bSub) {
+                    if (!b.length) continue; const composite = [...h, ...b]; const testMeld = evaluateMeldStructure(composite);
+                    if (testMeld.type === 'invalid' || testMeld.type === 'Bomb') continue;
+                    if (!verifyMeldLegality(testMeld, lastPlayedCombo, h.length, b.length)) { options.push({ meld: testMeld, handCards: h, boardCards: b, val: testMeld.value }); }
+                }
+            }
+            if (!options.length) return null; options.sort((a,b) => a.val - b.val); return options[0];
+        }
+        function findComputerLoveBomb() {
+            const hSub = getPowerset(computerHand, 4); const bSub = getPowerset(sharedBoard, 3);
+            for (const h of hSub) {
+                if (!h.length) continue;
+                if (sharedBoard.length === 0) {
+                    if (h.length === 4) {
+                        const testMeld = evaluateMeldStructure(h);
+                        if (testMeld.type === 'Bomb' && !verifyMeldLegality(testMeld, lastPlayedCombo, h.length, 0)) return { meld: testMeld, handCards: h, boardCards: [] };
+                    }
+                    continue;
+                }
+                for (const b of bSub) {
+                    if (!b.length) continue; const composite = [...h, ...b]; if (composite.length !== 4) continue;
+                    const testMeld = evaluateMeldStructure(composite);
+                    if (testMeld.type === 'Bomb' && !verifyMeldLegality(testMeld, lastPlayedCombo, h.length, b.length)) { return { meld: testMeld, handCards: h, boardCards: b }; }
+                }
+            }
+            return null;
+        }
+        function getPowerset(array, maxLen) {
+            const grab = (curr, index) => { if (curr.length === len) { output.push(curr); return; } for (let i = index; i < array.length; i++) grab([...curr, array[i]], i + 1); };
+            const output = []; let len = 1; for (let i = 1; i <= Math.min(array.length, maxLen); i++) { len = i; grab([], 0); } return output;
+        }
+        function checkValidCombinationsExist(hand, board) {
+            if (board.length === 0) return false;
+            for (let i = 1; i <= Math.min(hand.length, 4); i++) {
+                const subH = getSubsetsFixed(hand, i);
+                for (const h of subH) {
+                    for (let j = 1; j <= Math.min(board.length, 3); j++) {
+                        const subB = getSubsetsFixed(board, j);
+                        for (const b of subB) { const res = evaluateMeldStructure([...h, ...b]); if (res.type !== 'invalid' && res.type !== 'Single') return true; }
+                    }
+                }
+            }
+            return false;
+        }
+        function getSubsetsFixed(arr, size) {
+            const res = []; const recurse = (prefix, remaining) => { if (prefix.length === size) { res.push(prefix); return; } for (let i = 0; i < remaining.length; i++) { recurse([...prefix, remaining[i]], remaining.slice(i + 1)); } };
+            recurse([], arr); return res;
+        }
+
+        function roundTermination(winner) {
+            disableControls(); playBtn.classList.add('hidden'); passBtn.classList.add('hidden'); nextRoundBtn.classList.remove('hidden');
+            const isUser = (winner === 'player'); addToLog(`--- Cycle Concluded: ${isUser ? 'Victory Achieved' : 'Defeat Incurred'} ---`);
+            if (isUser) { playerScore++; addToLog(`Rival retained cards:`, computerHand); } else { computerScore++; addToLog(`You retained cards:`, playerHand); }
+            lastRoundWinner = winner; renderAll(); updateStatus(`${isUser ? 'You claimed the match cycle!' : 'Rival asserted dominance.'}`);
+            nextRoundBtn.textContent = (playerScore >= 2 || computerScore >= 2) ? 'Initiate New Match' : 'Next Cycle';
+        }
+
+        playBtn.addEventListener('click', playTurn); passBtn.addEventListener('click', passTurn);
+        nextRoundBtn.addEventListener('click', () => (playerScore >= 2 || computerScore >= 2) ? startGame() : startRound()); restartBtn.addEventListener('click', startGame);
+        document.getElementById('play-log-helper-btn').addEventListener('click', () => document.body.classList.add('log-open'));
+        document.getElementById('close-log-btn').addEventListener('click', () => document.body.classList.remove('log-open'));
         
-        document.getElementById('log-toggle-btn').addEventListener('click', () => {
-            document.getElementById('game-log-container').classList.toggle('expanded');
-        });
-        
-        document.getElementById('combos-toggle-btn').addEventListener('click', () => {
-            document.getElementById('combos-helper-container').classList.toggle('expanded');
+        gameTitleElem.addEventListener('click', () => {
+            titleClickCount++;
+            if (titleClickCount >= 5) {
+                launchFlyingBoxArt();
+                titleClickCount = 0;
+            }
+            setTimeout(() => { if (titleClickCount > 0) titleClickCount = 0; }, 3000);
         });
 
-        initializeGame(true);
+        startGame();
     </script>
 </body>
 </html>
-
